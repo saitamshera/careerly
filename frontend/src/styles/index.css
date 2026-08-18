@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    --bg-page: #fafaf9;
+    --surface: #ffffff;
+    --surface-subtle: #f8faf9;
+    --fg-primary: #111827;
+    --fg-secondary: #4b5563;
+    --fg-muted: #6b7280;
+    --border-subtle: #e5e7eb;
+    --border-strong: #d1d5db;
+    --brand-green: #16a34a;
+    --brand-green-dark: #15803d;
+    --brand-green-soft: #eaf7ee;
+    --brand-green-subtle: #f4fbf6;
+    --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+    --shadow-elevated: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.03);
+  }
+
+  .dark {
+    color-scheme: dark;
+    --bg-page: #0f172a;
+    --surface: #1e293b;
+    --surface-subtle: #172033;
+    --fg-primary: #f8fafc;
+    --fg-secondary: #cbd5e1;
+    --fg-muted: #94a3b8;
+    --border-subtle: #334155;
+    --border-strong: #475569;
+    --brand-green: #22c55e;
+    --brand-green-dark: #16a34a;
+    --brand-green-soft: rgba(34, 197, 94, 0.12);
+    --brand-green-subtle: rgba(34, 197, 94, 0.06);
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 6px 20px -2px rgba(0, 0, 0, 0.45);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg-page);
+    color: var(--fg-primary);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.serif-font {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+/* ──────────── Custom Scrollbar ──────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ──────────── Careerly Card Primitives ──────────── */
+.careerly-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.careerly-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+}
+
+.dark .careerly-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .careerly-card:hover {
+  border-color: #475569;
+}
+
+/* ──────────── Clean Animations ──────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

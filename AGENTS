@@ -1,0 +1,310 @@
+# CAREERLY PROJECT RULES + DEVELOPMENT INSTRUCTIONS
+
+You are working on Careerly, a student placement/personal project.
+The owner needs to understand and confidently explain the entire codebase during software engineering interviews.
+
+Therefore:
+CLARITY > COMPLEXITY  
+CORRECTNESS > ARCHITECTURE  
+REAL DATA > FAKE DATA  
+SMALL CHANGES > LARGE REFACTORS  
+WORKING PRODUCT > "PROFESSIONAL-LOOKING" CODE  
+
+---
+
+## 1. MINIMUM CODE
+Write the MINIMUM code needed for the requested functionality.
+Do not add:
+- unnecessary abstractions
+- "just in case" code
+- unused helpers
+- speculative utilities
+- unused configuration
+- unnecessary error handling
+- unnecessary interfaces
+- unnecessary classes
+- unnecessary design patterns
+- future-proofing that was not requested
+
+If existing code can solve the problem with a small modification, modify it. Do not create a new architecture simply because it looks cleaner.
+
+---
+
+## 2. NO DEAD CODE
+Do not leave:
+- commented-out old implementations
+- unused imports
+- unused variables
+- unused functions
+- unused components
+- unused routes
+- unused services
+- placeholder implementations
+- duplicate implementations
+
+If code is no longer used and it is safe to remove it, remove it.
+
+---
+
+## 3. FEWER, CLEARER LINES
+Prefer fewer, readable lines over:
+- clever one-liners
+- excessive abstraction
+- deeply nested architecture
+- unnecessary wrappers
+- excessive helper functions
+
+Readable code is more important than "enterprise-looking" code. Do not reduce line count blindly. A shorter implementation is NOT automatically better if it becomes harder to understand.
+
+---
+
+## 4. FUNCTION RESPONSIBILITY
+Keep functions focused and explainable. Each function should have one clear responsibility.
+Do NOT split a simple function into many tiny functions merely to reduce line count.
+Split a function only when doing so genuinely improves readability, testing, reuse, or responsibility separation.
+Every major function should be explainable in one simple sentence.
+
+---
+
+## 5. EXPLAIN BEFORE CODING
+Before making code changes, briefly explain the approach in 2-3 lines:
+- what is broken or being changed
+- why this approach is appropriate
+- why it is preferable to simpler alternatives
+
+---
+
+## 6. REUSE EXISTING CODE
+Before creating a new service, utility, hook, component, controller, repository, model, helper, API, or calculation, search the entire project for existing logic that already performs the same responsibility.
+Do NOT create a second implementation of something that already exists.
+
+---
+
+## 7. NO DUPLICATE SYSTEMS
+There must be one source of truth for each important responsibility.
+Do not create duplicate scoring systems, readiness calculations, telemetry systems, Gemini clients, auth systems, API clients, database logic, roadmap calculations, interview state machines, platform definitions, or validation logic.
+
+---
+
+## 8. NEW FILES REQUIRE JUSTIFICATION
+Do not create a new file unless it is actually necessary.
+Before creating a new abstraction, answer:
+1. What existing code cannot handle this?
+2. What duplication does this remove?
+3. Why is modifying existing code not simpler?
+
+---
+
+## 9. NO SPECULATIVE ARCHITECTURE
+Do NOT introduce repositories, factories, adapters, managers, facades, service layers, abstraction layers, event buses, complex state machines, or design patterns unless the current project actually needs them.
+This is a student placement project, not a hypothetical enterprise system. Optimize for code the owner can understand and explain.
+
+---
+
+## 10. STABILIZE BEFORE EXPANDING
+If an existing feature is broken: **STOP FEATURE DEVELOPMENT**.
+Fix the regression first before adding new features, redesigning unrelated UI, refactoring unrelated files, or creating new abstractions.
+
+---
+
+## 11. DIAGNOSE BEFORE EDITING
+Before changing code:
+1. Reproduce the problem.
+2. Identify the exact failing request/function/component.
+3. Trace the dependency causing the failure.
+4. Identify the root cause.
+5. Then make the smallest safe fix.
+Do NOT guess. Do NOT patch symptoms. Do NOT add random fallback logic.
+
+---
+
+## 12. MAKE THE SMALLEST SAFE CHANGE
+When fixing a bug, modify the smallest number of files and lines necessary.
+Do not rewrite working systems or combine bug fixes with unrequested refactors and UI redesigns.
+
+---
+
+## 13. PRESERVE WORKING BEHAVIOR
+Before modifying a core function, determine who calls it, what it returns, what API depends on it, what database fields it uses, and what frontend depends on it.
+
+---
+
+## 14. AUTHENTICATION IS CRITICAL
+Treat authentication as a protected core system. Changes to auth, JWT, middleware, app.js, env config, db connection, and route registration must be regression tested with actual HTTP requests (Register → Login → JWT → Authenticated Request).
+
+---
+
+## 15. API CONTRACTS
+Do not silently change existing API contracts (endpoint paths, HTTP methods, request/response fields, status codes, auth requirements, DB fields).
+
+---
+
+## 16. DATABASE SAFETY
+Do not modify database schemas casually. Inspect current consumers, stored documents, and repository/service usage before changing models. Never rename/remove fields just for aesthetic preference.
+
+---
+
+## 17. REAL DATA ONLY
+Never fabricate scores, statistics, readiness, analytics, activity, GitHub/LeetCode metrics, interview performance, resume scores, or job match percentages.
+If real data is unavailable, explicitly show "Not enough data" or an appropriate empty state.
+
+---
+
+## 18. AI VS DETERMINISTIC LOGIC
+Use normal code for calculations, sorting, filtering, validation, database queries, state transitions, percentages, aggregations, and routing.
+Use Gemini only when actual natural language understanding or generation is required.
+
+---
+
+## 19. GEMINI INFRASTRUCTURE
+Use one shared Gemini infrastructure layer ([geminiClient.js](file:///c:/Users/mohit/Desktop/project1/backend/src/utils/geminiClient.js)). Domain services contain prompts and business logic; the utility contains infrastructure only.
+
+---
+
+## 20. PROMPTS
+Keep AI prompts focused and preserve working prompts that already produce correct behavior.
+
+---
+
+## 21. READINESS SYSTEM
+Careerly's readiness system is evidence-first. Clearly separate:
+- **Job Match**: How closely the profile matches a specific job description.
+- **Placement Readiness**: How prepared the candidate is for the hiring process.
+- **Activity**: How actively the candidate has been preparing.
+
+---
+
+## 22. READINESS DATA
+Every readiness dimension must have: `score`, `status`, and `evidence`.
+If insufficient data exists, return `score: null, status: "insufficient_data", evidence: []`. Never convert missing data into zero or invent precision.
+
+---
+
+## 23. READINESS WEIGHTS
+Document weight rationale clearly and use JD-derived or general SDE benchmarks rather than pretending to know proprietary hiring thresholds.
+
+---
+
+## 24. JOB MATCH
+Extract JD skills with AI, but calculate skill overlap deterministically. Do not let Gemini arbitrarily guess a match percentage without explainable underlying data.
+
+---
+
+## 25. PRIORITY ENGINE
+Priorities must be explainable:
+- WHY is this important?
+- WHY now?
+- WHAT should the user do?
+- WHERE should they do it?
+
+---
+
+## 26. ROADMAP
+The roadmap is an execution layer driven by target job, readiness gaps, and user action — not an independent, conflicting intelligence system.
+
+---
+
+## 27. CLOSED LOOP
+Show real historical deltas when previous snapshots exist, or recent events when they don't. Never fabricate progress deltas.
+
+---
+
+## 28. FEATURE INTEGRATION
+Careerly behaves as one unified loop: Dashboard Gaps → DSA / AI Interview / Resume Labs → Telemetry Updates → Readiness Recalculation.
+
+---
+
+## 29. NO UI-FIRST DEVELOPMENT FOR CORE INTELLIGENCE
+For intelligence features: Make the backend work → Verify API with real data → Connect the frontend.
+
+---
+
+## 30. UI CONSISTENCY
+Use the existing design system tokens, components, and styling conventions across all pages.
+
+---
+
+## 31. DO NOT REDESIGN UNRELATED PAGES
+Stay strictly within the requested scope.
+
+---
+
+## 32. REFACTORING RULE
+Do NOT refactor merely because a file is large. Refactor only for real duplication, unclear responsibility, concrete maintenance issues, or bugs.
+
+---
+
+## 33. LINE COUNT IS NOT THE GOAL
+Optimize for code clarity, correctness, and explainability.
+
+---
+
+## 34. BASELINE BEFORE LARGE CHANGES
+Record git baseline, status, and API behavior before starting major changes.
+
+---
+
+## 35. SMALL PHASES
+Change → Test → Verify → Next Change. Stop immediately if anything breaks.
+
+---
+
+## 36. BUILD IS NOT ENOUGH
+`npm run build` is not sufficient. Test actual HTTP requests, affected user flows, and real data read/write.
+
+---
+
+## 37. REGRESSION TESTING
+After changes to shared systems, test all dependent core modules: Auth, Chat, AI Interview, Resume, Dashboard, Roadmap, DSA, Coding Profiles, LeetCode, GitHub, Jobs.
+
+---
+
+## 38. IF A REGRESSION OCCURS
+Stop immediately. Identify failure and root cause, then fix or revert.
+
+---
+
+## 39. RESTORE BEFORE WORKAROUND
+Prefer restoring known-working implementations over stacking complex fallbacks.
+
+---
+
+## 40. GIT SAFETY
+Never run destructive git commands without approval.
+
+---
+
+## 41. NEVER CLAIM SUCCESS PREMATURELY
+Only report success after executing real functional tests.
+
+---
+
+## 42. FINAL TASK REPORT
+Always provide:
+- Files modified, created, deleted
+- Core behavior changed
+- Tests actually performed
+- Build & API results
+- Known remaining issues
+
+---
+
+## 43. OWNER EXPLAINABILITY
+Optimize for student placement interview clarity. Choose solutions with fewer concepts, files, dependencies, and abstractions.
+
+---
+
+## 44. MOST IMPORTANT RULE
+**WORKING PRODUCT > ARCHITECTURE**  
+**SIMPLE CODE > COMPLEX CODE**  
+**REAL DATA > FAKE DATA**  
+**ROOT-CAUSE FIX > PATCH**  
+**REUSE > DUPLICATION**  
+**SMALL CHANGE > LARGE REFACTOR**  
+**UNDERSTANDABLE > IMPRESSIVE-LOOKING**  
+**STABILITY > NEW FEATURES**  
+
+---
+
+## 45. CURRENT DEVELOPMENT MODE
+Always classify task as: (A) Bug fix, (B) Existing feature modification, (C) New feature, (D) Refactor, or (E) UI redesign. If anything is broken, enter **STABILIZATION MODE**.
