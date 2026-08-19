@@ -15,12 +15,17 @@ import {
   GraduationCap,
   X,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Trash2,
+  Share2,
+  Link2,
+  ShieldCheck
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 
 const suggestedPrompts = [
   {
@@ -189,6 +194,10 @@ export function ChatMentorPage() {
   const [activeConversationTitle, setActiveConversationTitle] = useState('');
   const [copiedId, setCopiedId] = useState(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [deletingConv, setDeletingConv] = useState(null);
+  const [sharingConv, setSharingConv] = useState(null);
+  const [shareLink, setShareLink] = useState('');
+  const [isShareCopied, setIsShareCopied] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const queryClient = useQueryClient();
@@ -210,6 +219,51 @@ export function ChatMentorPage() {
     },
     enabled: isHistoryOpen
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (convId) => {
+      await api.delete(`/ai/chat/conversations/${convId}`);
+    },
+    onSuccess: (_, convId) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (activeConversationId === convId) {
+        handleClearChat();
+      }
+      setDeletingConv(null);
+    }
+  });
+
+  const shareMutation = useMutation({
+    mutationFn: async (convId) => {
+      const response = await api.post(`/ai/chat/conversations/${convId}/share`);
+      return response.data?.data;
+    },
+    onSuccess: (data) => {
+      if (data?.shareToken) {
+        setShareLink(`${window.location.origin}/shared/chat/${data.shareToken}`);
+      }
+    }
+  });
+
+  function handleOpenShare(event, conv) {
+    event.stopPropagation();
+    setSharingConv(conv);
+    setShareLink('');
+    setIsShareCopied(false);
+    shareMutation.mutate(conv._id || conv.id);
+  }
+
+  function handleOpenDelete(event, conv) {
+    event.stopPropagation();
+    setDeletingConv(conv);
+  }
+
+  function handleCopyShareLink() {
+    if (!shareLink) return;
+    navigator.clipboard.writeText(shareLink);
+    setIsShareCopied(true);
+    setTimeout(() => setIsShareCopied(false), 2000);
+  }
 
   const chatMutation = useMutation({
     mutationFn: async (payload) => {
@@ -565,25 +619,150 @@ export function ChatMentorPage() {
               ) : (conversationsData || []).length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">No previous conversations found.</p>
               ) : (
-                (conversationsData || []).map((conv) => (
-                  <div
-                    key={conv._id || conv.id}
-                    onClick={() => handleLoadConversation(conv)}
-                    className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition text-xs space-y-1"
-                  >
-                    <p className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                      {conv.title || 'Conversation'}
-                    </p>
-                    <p className="text-[0.68rem] text-slate-400">
-                      {conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString() : 'Recent'}
-                    </p>
-                  </div>
-                ))
+                (conversationsData || []).map((conv) => {
+                  const convId = conv._id || conv.id;
+                  const isActive = convId === activeConversationId;
+                  return (
+                    <div
+                      key={convId}
+                      onClick={() => handleLoadConversation(conv)}
+                      className={`group p-3 rounded-xl border transition text-xs flex items-center justify-between gap-2 cursor-pointer ${
+                        isActive
+                          ? 'border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20'
+                          : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0 space-y-0.5">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                          {conv.title || 'Conversation'}
+                        </p>
+                        <p className="text-[0.68rem] text-slate-400">
+                          {conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString() : 'Recent'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 opacity-80 sm:opacity-0 group-hover:opacity-100 transition">
+                        <button
+                          type="button"
+                          title="Share conversation"
+                          onClick={(e) => handleOpenShare(e, conv)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete conversation"
+                          onClick={(e) => handleOpenDelete(e, conv)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(deletingConv)}
+        onClose={() => setDeletingConv(null)}
+        title="Delete Conversation?"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Are you sure you want to delete <strong className="text-slate-900 dark:text-white">"{deletingConv?.title}"</strong>? This action is permanent and cannot be undone.
+          </p>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDeletingConv(null)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              isLoading={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate(deletingConv._id || deletingConv.id)}
+            >
+              Delete Permanently
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Share Link Modal */}
+      <Modal
+        isOpen={Boolean(sharingConv)}
+        onClose={() => {
+          setSharingConv(null);
+          setShareLink('');
+        }}
+        title="Share Conversation"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200">
+            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+            <div className="text-[0.72rem] leading-relaxed">
+              <strong>Privacy-Safe Snapshot:</strong> Personal identifying details (full name, email, phone number, college) are automatically redacted before creating this public link.
+            </div>
+          </div>
+
+          {shareMutation.isPending ? (
+            <div className="py-6 text-center text-slate-400">
+              Generating secure snapshot...
+            </div>
+          ) : shareLink ? (
+            <div className="space-y-2">
+              <label className="block text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">
+                Public Read-Only Link
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareLink}
+                  className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none select-all"
+                />
+                <Button
+                  size="sm"
+                  icon={isShareCopied ? Check : Copy}
+                  onClick={handleCopyShareLink}
+                >
+                  {isShareCopied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4 text-center text-rose-500">
+              Failed to generate share link. Please try again.
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setSharingConv(null);
+                setShareLink('');
+              }}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

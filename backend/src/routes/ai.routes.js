@@ -16,10 +16,16 @@ const {
   recruiterAnalysis,
   getChatHistory,
   getConversation,
-  deleteConversation
+  deleteConversation,
+  shareConversation,
+  getSharedConversationHandler,
+  deleteInterview
 } = require('../controllers/ai.controller');
 
 const aiRoutes = express.Router();
+
+// Public shared conversation route (no auth required)
+aiRoutes.get('/chat/shared/:token', getSharedConversationHandler);
 
 aiRoutes.use(protect);
 
@@ -29,6 +35,7 @@ aiRoutes.get('/chat/conversations', getChatHistory);
 aiRoutes.get('/chat/conversations/:id', getConversation);
 aiRoutes.get('/chat/history/:id', getConversation);
 aiRoutes.delete('/chat/conversations/:id', deleteConversation);
+aiRoutes.post('/chat/conversations/:id/share', shareConversation);
 
 aiRoutes.get('/roadmap/context', getRoadmapContext);
 aiRoutes.get('/roadmap', getRoadmap);
@@ -41,6 +48,7 @@ aiRoutes.post('/recruiter-analysis', recruiterAnalysis);
 
 aiRoutes.get('/interviews', listInterviews);
 aiRoutes.get('/interviews/:id', getInterview);
+aiRoutes.delete('/interviews/:id', deleteInterview);
 aiRoutes.post('/interviews/:id/answer', submitAnswer);
 aiRoutes.post('/interviews/:id/complete', completeInterview);
 

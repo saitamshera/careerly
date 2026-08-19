@@ -63,6 +63,18 @@ export function CodingProfilesPage() {
     }
   });
 
+  // Fetch DSA Tracker summary stats
+  const { data: dsaStats } = useQuery({
+    queryKey: ['dsa-stats'],
+    queryFn: async () => (await api.get('/dsa/stats')).data?.data
+  });
+
+  const dsaTopicsCoveredCount = useMemo(() => {
+    return Object.keys(dsaStats?.topics || {}).length;
+  }, [dsaStats]);
+
+  const dsaStreak = dsaStats?.streak || 0;
+
   // Upsert Mutation
   const upsertMutation = useMutation({
     mutationFn: async (payload) => {
@@ -253,7 +265,80 @@ export function CodingProfilesPage() {
         }
       />
 
-      {/* 2. Overview Metrics Row */}
+      {/* 2. DSA Practice Summary Snapshot */}
+      <Card className="p-4 sm:p-5 bg-gradient-to-r from-emerald-500/5 via-slate-50 to-emerald-500/5 dark:from-emerald-950/20 dark:via-slate-900/50 dark:to-emerald-950/20 border-emerald-200/60 dark:border-emerald-800/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-200/60 dark:border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-bold">
+              <Code2 className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  DSA Practice Tracker
+                </h3>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+                  Personal Log
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Manual problem notes, pattern tags, and daily consistency.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/dsa-tracker"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition shrink-0 group self-start sm:self-auto"
+          >
+            <span>View Full Tracker</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-3.5">
+          <div>
+            <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Problems Logged
+            </span>
+            <p className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 dark:text-slate-100 mt-0.5">
+              {dsaStats?.total ?? 0}
+            </p>
+            <p className="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-0.5">
+              {dsaStats?.solved ?? 0} marked solved
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Topics Covered
+            </span>
+            <p className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 dark:text-slate-100 mt-0.5">
+              {dsaTopicsCoveredCount}
+            </p>
+            <p className="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-0.5">
+              across data structures
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Active Streak
+            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Flame className={`w-4 h-4 ${dsaStreak > 0 ? 'text-amber-500 animate-pulse' : 'text-slate-400'}`} />
+              <span className="text-xl sm:text-2xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+                {dsaStreak} <span className="text-xs font-medium text-slate-500">{dsaStreak === 1 ? 'day' : 'days'}</span>
+              </span>
+            </div>
+            <p className="text-[0.7rem] text-slate-400 dark:text-slate-500 mt-0.5">
+              continuous practice
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* 3. Overview Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Problems Solved"

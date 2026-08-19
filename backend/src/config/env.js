@@ -28,6 +28,8 @@ const schema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
   GOOGLE_REDIRECT_URI: z.string().optional().default('http://localhost:5000/api/gmail/callback'),
+  GITHUB_WEBHOOK_SECRET: z.string().optional().default(''),
+  GITHUB_TOKEN: z.string().optional().default(''),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash')
 });

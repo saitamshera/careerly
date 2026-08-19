@@ -3,11 +3,12 @@ const { ApiError } = require('../utils/apiError');
 const { env } = require('../config/env');
 const { logger } = require('../config/logger');
 const { z } = require('zod');
-const { generateStructuredJSON } = require('../utils/geminiClient');
+const { generateWithGemini, generateStructuredJSON } = require('../utils/geminiClient');
 const {
   createInterviewSession,
   findInterviewsByUserId,
   findInterviewByIdAndUserId,
+  deleteInterviewByIdAndUserId,
   saveInterviewFeedback
 } = require('../repositories/ai.repository');
 const { findResumesByUserId } = require('../repositories/resume.repository');
@@ -86,12 +87,57 @@ async function callGeminiJson(prompt, schema) {
 }
 
 /**
+ * Researches real-life interview question patterns for a given company using Google Search Grounding.
+ * Sets an 8s timeout and fails silently back to generic role patterns.
+ */
+async function researchCompanyInterviewIntel(targetCompany, targetRole, type) {
+  if (!targetCompany || typeof targetCompany !== 'string' || !targetCompany.trim()) {
+    return '';
+  }
+
+  const cleanCompany = targetCompany.trim();
+  const cleanRole = (targetRole || 'Software Engineer').trim();
+
+  const prompt = `Research real-life engineering interview patterns and questions for ${cleanCompany} for the role of ${cleanRole} (${type} interview track).
+Summarize in 3-4 bullet points:
+- Core interview themes and question styles asked by ${cleanCompany} (e.g. Amazon Leadership Principles / STAR questions, Google algorithms/distributed systems, Meta product design).
+- Specific evaluation priorities and company values.
+Keep the summary concise, factual, and actionable.`;
+
+  try {
+    const searchPromise = generateWithGemini({
+      prompt,
+      config: {
+        tools: [{ googleSearch: {} }]
+      }
+    });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Search grounding timed out')), 8000)
+    );
+
+    const result = await Promise.race([searchPromise, timeoutPromise]);
+    if (result && result.text && result.text.trim()) {
+      return result.text.trim();
+    }
+  } catch (err) {
+    logger.warn(`Company search grounding skipped for ${cleanCompany}:`, {
+      message: err?.message || String(err)
+    });
+  }
+
+  return '';
+}
+
+/**
  * Process an interview turn with memory tracking, natural reactions, and adaptive follow-ups.
  */
 async function processInterviewTurn({
   type = 'technical',
   difficulty = 'medium',
   targetRole = 'SDE-1',
+  targetCompany = '',
+  companyIntel = '',
   topic = '',
   jobDescription = '',
   resumeText = '',
@@ -101,13 +147,11 @@ async function processInterviewTurn({
   const isOpening = !transcript || transcript.length === 0;
 
   if (isOpening) {
-    const openingPrompt = `You are an experienced, high-standards senior software engineering interviewer at a top technology company.
+    const openingPrompt = `You are an experienced, high-standards senior software engineering interviewer${targetCompany ? ` at ${targetCompany}` : ' at a top technology company'}.
 Conducting a ${difficulty} difficulty ${type} interview for the target role: ${targetRole}${topic ? ` (${topic})` : ''}.
-${jobDescription ? `Target Job Description:\n"""\n${jobDescription.substring(0, 2000)}\n"""\n` : ''}
-${resumeText ? `Candidate Resume Context:\n"""\n${resumeText.substring(0, 3000)}\n"""\n` : ''}
-
+${targetCompany ? `Target Company: ${targetCompany}\n` : ''}${companyIntel ? `Real Company Interview Intelligence & Rubrics:\n"""\n${companyIntel}\n"""\n` : ''}${jobDescription ? `Target Job Description:\n"""\n${jobDescription.substring(0, 2000)}\n"""\n` : ''}${resumeText ? `Candidate Resume Context:\n"""\n${resumeText.substring(0, 3000)}\n"""\n` : ''}
 Generate the opening question for this interview.
-- Match the interview style (${type}):
+${companyIntel ? `- IMPORTANT: Ground your opening question in ${targetCompany}'s actual real-life interview patterns and criteria provided above (e.g. Amazon Leadership Principles/STAR for behavioral, Google CS/algorithmic fundamentals for technical).\n` : ''}- Match the interview style (${type}):
   * behavioral / STAR: Start with a concrete behavioral opener about a challenging project, leadership, or ownership.
   * technical / coding: Start with a solid engineering question on fundamentals, data structures, or project architecture.
   * system-design: Set a clear, realistic architectural design scenario.
@@ -181,13 +225,13 @@ Structured Memory accumulated so far:
 - Adapted Difficulty: "${structuredMemory.adaptedDifficulty || difficulty}"
 `.trim();
 
-  const turnPrompt = `You are a real-life, rigorous senior software engineering interviewer at a top technology company.
+  const turnPrompt = `You are a real-life, rigorous senior software engineering interviewer${targetCompany ? ` at ${targetCompany}` : ' at a top technology company'}.
 You are in the middle of a live interview with a candidate.
 
 Role: ${targetRole}
-Interview Style: ${type}
+${targetCompany ? `Target Company: ${targetCompany}\n` : ''}Interview Style: ${type}
 Base Difficulty: ${difficulty}
-${jobDescription ? `Job Description:\n"""\n${jobDescription.substring(0, 2000)}\n"""\n` : ''}
+${companyIntel ? `Real Company Interview Intelligence & Rubrics:\n"""\n${companyIntel}\n"""\n` : ''}${jobDescription ? `Job Description:\n"""\n${jobDescription.substring(0, 2000)}\n"""\n` : ''}
 ${resumeText ? `Candidate Resume Context:\n"""\n${resumeText.substring(0, 3000)}\n"""\n` : ''}
 
 ${memoryContext}
@@ -373,11 +417,17 @@ async function startInterview(arg1, arg2 = {}) {
   const resumes = await findResumesByUserId(userId).catch(() => []);
   const resumeText = resumes[0]?.extractedText || '';
 
+  // Research company-specific interview intelligence if targetCompany is provided
+  const companyIntel = targetCompany
+    ? await researchCompanyInterviewIntel(targetCompany, targetRole, type)
+    : '';
+
   const initialTurn = await processInterviewTurn({
     type,
     difficulty: normalizedDifficulty,
     targetRole,
     targetCompany,
+    companyIntel,
     topic: topic || priorityFocus || targetRole,
     jobDescription,
     resumeText,
@@ -393,7 +443,8 @@ async function startInterview(arg1, arg2 = {}) {
       topicsCovered: [priorityFocus || topic || 'Core Engineering'],
       currentTopic: priorityFocus || topic || 'Core Engineering',
       topicTurnCount: 0,
-      adaptedDifficulty: normalizedDifficulty
+      adaptedDifficulty: normalizedDifficulty,
+      companyIntel
     }
   });
 
@@ -427,7 +478,8 @@ async function startInterview(arg1, arg2 = {}) {
       topicsCovered: [initialTurn.currentTopic || 'Core Engineering'],
       currentTopic: initialTurn.currentTopic || 'Core Engineering',
       topicTurnCount: 1,
-      adaptedDifficulty: initialTurn.adaptedDifficulty || normalizedDifficulty
+      adaptedDifficulty: initialTurn.adaptedDifficulty || normalizedDifficulty,
+      companyIntel
     },
     score: 0,
     confidence: 0,
@@ -455,6 +507,15 @@ async function listUserInterviews(userId) {
 async function getUserInterview(userId, interviewId) {
   validateObjectId(interviewId, 'Invalid interview id');
   const interview = await findInterviewByIdAndUserId(interviewId, userId);
+  if (!interview) {
+    throw new ApiError(404, 'Interview not found');
+  }
+  return interview;
+}
+
+async function deleteUserInterview(userId, interviewId) {
+  validateObjectId(interviewId, 'Invalid interview id');
+  const interview = await deleteInterviewByIdAndUserId(interviewId, userId);
   if (!interview) {
     throw new ApiError(404, 'Interview not found');
   }
@@ -514,12 +575,15 @@ async function submitInterviewAnswer({ userId, interviewId, answer }) {
   }
 
   const prevMemory = interview.structuredMemory || {};
+  const companyIntel = prevMemory.companyIntel || '';
 
   // Process the turn through the conversational interviewer brain
   const turnResult = await processInterviewTurn({
     type: interview.type,
     difficulty: interview.difficulty,
     targetRole: interview.targetRole || interview.topic || 'SDE-1',
+    targetCompany: interview.targetCompany || '',
+    companyIntel,
     topic: interview.topic,
     jobDescription: interview.jobDescription || '',
     resumeText,
@@ -917,7 +981,12 @@ module.exports = {
   startInterview,
   listUserInterviews,
   getUserInterview,
+  deleteUserInterview,
   submitInterviewAnswer,
   completeInterviewSession,
-  evaluateAnswerWithAI
+  evaluateAnswerWithAI,
+  researchCompanyInterviewIntel,
+  processInterviewTurn
 };
+
+

@@ -17,6 +17,8 @@ import { CodingProfilesPage } from './pages/CodingProfilesPage';
 import { LeetCodeIntelligencePage } from './pages/LeetCodeIntelligencePage';
 import { GitHubIntelligencePage } from './pages/GitHubIntelligencePage';
 import { ProfilePage } from './pages/ProfilePage';
+import { PracticePage } from './pages/PracticePage';
+import { SharedChatPage } from './pages/SharedChatPage';
 import { loginUser, registerUser, googleLoginUser } from './services/auth.api';
 import { setSession } from './app/store';
 import { api } from './services/api';
@@ -53,7 +55,9 @@ export default function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const isWorkspace = !['/', '/login', '/register', '/forgot-password'].includes(location.pathname);
+  const isWorkspace =
+    !['/', '/login', '/register', '/forgot-password'].includes(location.pathname) &&
+    !location.pathname.startsWith('/shared/chat');
 
   async function handleLoginSubmit(formData) {
     setLoading(true);
@@ -100,15 +104,18 @@ export default function App() {
           <Route path="/resume" element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
           <Route path="/job-tracker" element={<ProtectedRoute><JobTrackerPage /></ProtectedRoute>} />
           <Route path="/interview-prep" element={<ProtectedRoute><AIInterviewPage /></ProtectedRoute>} />
+          <Route path="/interview-prep/:id" element={<ProtectedRoute><AIInterviewPage /></ProtectedRoute>} />
           <Route path="/coding-profiles" element={<ProtectedRoute><CodingProfilesPage /></ProtectedRoute>} />
           <Route path="/coding-profiles/leetcode" element={<ProtectedRoute><LeetCodeIntelligencePage /></ProtectedRoute>} />
           <Route path="/coding-profiles/github" element={<ProtectedRoute><GitHubIntelligencePage /></ProtectedRoute>} />
           <Route path="/leetcode" element={<Navigate to="/coding-profiles/leetcode" replace />} />
           <Route path="/dsa-tracker" element={<ProtectedRoute><DsaTrackerPage /></ProtectedRoute>} />
+          <Route path="/practice/:topic" element={<ProtectedRoute><PracticePage /></ProtectedRoute>} />
           <Route path="/roadmap" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
           <Route path="/chat-mentor" element={<ProtectedRoute><ChatMentorPage /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/shared/chat/:token" element={<SharedChatPage />} />
           <Route path="/gmail/callback" element={<GmailCallbackHandler />} />
           <Route path="/login" element={<AuthPage title="Welcome back" mode="login" loading={loading} onSubmit={handleLoginSubmit} onGoogleAuth={handleGoogleAuth} />} />
           <Route path="/register" element={<AuthPage title="Create your account" mode="register" loading={loading} onSubmit={handleRegisterSubmit} onGoogleAuth={handleGoogleAuth} />} />

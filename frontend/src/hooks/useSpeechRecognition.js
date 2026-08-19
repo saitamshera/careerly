@@ -64,25 +64,27 @@ export function useSpeechRecognition() {
         };
 
         recognition.onresult = (event) => {
-          console.log('[SPEECH] onresult fired, results count:', event.results.length);
-          let sessionFinal = '';
+          let newFinal = '';
           let interim = '';
-          for (let i = 0; i < event.results.length; i++) {
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
             const res = event.results[i];
             const text = res[0]?.transcript || '';
             if (res.isFinal) {
-              sessionFinal += (sessionFinal ? ' ' : '') + text.trim();
+              newFinal += (newFinal ? ' ' : '') + text.trim();
             } else {
               interim += (interim ? ' ' : '') + text.trim();
             }
           }
-          if (sessionFinal) {
-            const base = transcriptRef.current.trim();
-            const combined = base ? `${base} ${sessionFinal}` : sessionFinal;
+
+          if (newFinal) {
+            const previous = transcriptRef.current.trim();
+            console.log('[SPEECH] Previous accumulated:', previous, '| New incoming chunk:', newFinal);
+            const combined = previous ? `${previous} ${newFinal}` : newFinal;
             transcriptRef.current = combined;
             setTranscript(combined);
-            console.log('[SPEECH] Transcript updated:', combined);
           }
+
           setInterimText(interim);
         };
 

@@ -1,8 +1,16 @@
-﻿node_modules/
+node_modules/
 .env
+.env.*
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
 frontend/.env
+frontend/.env.*
+!frontend/.env.example
 frontend/dist/
 dist/
 build/
 .DS_Store
+*.log
+

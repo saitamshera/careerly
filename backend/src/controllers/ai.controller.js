@@ -4,6 +4,7 @@ const {
   generateInterview,
   listUserInterviews,
   getUserInterview,
+  deleteUserInterview,
   submitInterviewAnswer,
   completeInterviewSession,
   evaluateAnswerWithAI
@@ -19,7 +20,9 @@ const {
   createChatMessage,
   getUserConversations,
   getConversationMessages,
-  deleteUserConversation
+  deleteUserConversation,
+  shareUserConversation,
+  getSharedConversation
 } = require('../services/chatMentor.service');
 const { reviewResumeWithAI } = require('../services/resume.service');
 
@@ -30,6 +33,7 @@ const createInterview = asyncHandler(async (request, response) => {
     difficulty: request.body.difficulty,
     topic: request.body.topic,
     targetRole: request.body.targetRole || request.body.topic || 'SDE-1',
+    targetCompany: request.body.targetCompany || '',
     jobDescription: request.body.jobDescription || ''
   });
 
@@ -63,6 +67,11 @@ const completeInterview = asyncHandler(async (request, response) => {
   });
 
   response.status(200).json(new ApiResponse(200, interview, 'Interview completed and report generated'));
+});
+
+const deleteInterview = asyncHandler(async (request, response) => {
+  await deleteUserInterview(request.user.id, request.params.id);
+  response.status(200).json(new ApiResponse(200, null, 'Interview evaluation deleted'));
 });
 
 const chatMentor = asyncHandler(async (request, response) => {
@@ -143,6 +152,16 @@ const deleteConversation = asyncHandler(async (request, response) => {
   response.status(200).json(new ApiResponse(200, null, 'Conversation deleted'));
 });
 
+const shareConversation = asyncHandler(async (request, response) => {
+  const result = await shareUserConversation(request.params.id, request.user.id);
+  response.status(201).json(new ApiResponse(201, result, 'Conversation shared successfully'));
+});
+
+const getSharedConversationHandler = asyncHandler(async (request, response) => {
+  const result = await getSharedConversation(request.params.token);
+  response.status(200).json(new ApiResponse(200, result, 'Shared conversation loaded'));
+});
+
 module.exports = {
   createInterview,
   listInterviews,
@@ -159,5 +178,8 @@ module.exports = {
   recruiterAnalysis,
   getChatHistory,
   getConversation,
-  deleteConversation
+  deleteConversation,
+  shareConversation,
+  getSharedConversationHandler,
+  deleteInterview
 };

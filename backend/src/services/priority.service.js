@@ -24,7 +24,8 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
     const priorityScore = Math.round(gap * relevance * impact * confidence);
 
     if (gap > 10) {
-      const weakTopic = dsa.weakTopics?.[0] || 'Dynamic Programming & Graphs';
+      const weakTopic = dsa.weakTopics?.[0] || 'Dynamic Programming';
+      const topicSlug = weakTopic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       candidates.push({
         id: 'dsa_mastery',
         category: 'DSA & Algorithms',
@@ -35,7 +36,7 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         priorityScore,
         whyReason: `Your DSA score is ${dsa.score}%. Target SDE roles heavily weight algorithmic filtering in early rounds.`,
         actionLabel: `Practice ${weakTopic}`,
-        actionRoute: `/dsa-tracker?topic=${encodeURIComponent(weakTopic)}`,
+        actionRoute: `/practice/${topicSlug}`,
         actionIntent: { type: 'SOLVE_DSA', topic: weakTopic },
         suggestedFocus: weakTopic
       });

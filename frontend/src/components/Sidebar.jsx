@@ -13,27 +13,25 @@ import {
   BarChart3,
   User,
   LogOut,
-  ChevronDown,
   Menu,
   X,
   Sun,
-  Moon,
-  Sparkles
+  Moon
 } from 'lucide-react';
 import { clearSession } from '../app/store';
 import { useTheme } from './ThemeProvider';
 
 const navSections = [
   {
-    title: 'PREPARATION',
+    title: 'MAIN',
     items: [
       { label: 'Overview', to: '/dashboard', icon: LayoutDashboard },
-      { label: 'Roadmap', to: '/roadmap', icon: Compass },
-      { label: 'DSA Tracker', to: '/dsa-tracker', icon: Code2 },
-      { label: 'Coding Profiles', to: '/coding-profiles', icon: Globe },
+      { label: 'Career Mentor', to: '/chat-mentor', icon: Bot },
       { label: 'AI Interview', to: '/interview-prep', icon: Video },
       { label: 'Resume Lab', to: '/resume', icon: FileText },
-      { label: 'Career Mentor', to: '/chat-mentor', icon: Bot }
+      { label: 'DSA Tracker', to: '/dsa-tracker', icon: Code2 },
+      { label: 'Roadmap', to: '/roadmap', icon: Compass },
+      { label: 'Coding Profiles', to: '/coding-profiles', icon: Globe }
     ]
   },
   {

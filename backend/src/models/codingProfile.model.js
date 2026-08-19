@@ -41,7 +41,17 @@ const codingProfileSchema = new mongoose.Schema(
       following: { type: Number, default: 0 },
       starsReceived: { type: Number, default: 0 },
       totalCommits: { type: Number, default: 0 },
-      languages: { type: Map, of: Number, default: {} }
+      languages: { type: Map, of: Number, default: {} },
+      contributionCalendar: {
+        totalLastYear: { type: Number, default: 0 },
+        days: [
+          {
+            date: { type: String },
+            count: { type: Number, default: 0 },
+            level: { type: Number, default: 0 }
+          }
+        ]
+      }
     },
     featuredRepos: [{ type: String }], // Array of pinned repository names for genuine persistence
     lastSyncedAt: {

@@ -1,6 +1,7 @@
 const { Interview } = require('../models/Interview');
 const { ChatHistory } = require('../models/ChatHistory');
 const { ChatConversation } = require('../models/ChatConversation');
+const { SharedConversation } = require('../models/SharedConversation');
 
 async function createInterviewSession(interviewData) {
   return Interview.create(interviewData);
@@ -12,6 +13,10 @@ async function findInterviewsByUserId(userId) {
 
 async function findInterviewByIdAndUserId(interviewId, userId) {
   return Interview.findOne({ _id: interviewId, userId });
+}
+
+async function deleteInterviewByIdAndUserId(interviewId, userId) {
+  return Interview.findOneAndDelete({ _id: interviewId, userId });
 }
 
 async function saveInterviewFeedback(interviewId, userId, payload) {
@@ -72,6 +77,14 @@ async function findChatHistoryByUserId(userId, limit = 20) {
   return ChatHistory.find({ userId }).sort({ createdAt: -1 }).limit(limit);
 }
 
+async function createSharedConversation(data) {
+  return SharedConversation.create(data);
+}
+
+async function findSharedConversationByToken(shareToken) {
+  return SharedConversation.findOne({ shareToken });
+}
+
 module.exports = {
   createInterviewSession,
   findInterviewsByUserId,
@@ -84,5 +97,10 @@ module.exports = {
   deleteConversationById,
   createChatEntry,
   findMessagesByConversationId,
-  findChatHistoryByUserId
-};
+  findChatHistoryByUserId,
+  createSharedConversation,
+  findSharedConversationByToken,
+  deleteInterviewByIdAndUserId
+};
+
+

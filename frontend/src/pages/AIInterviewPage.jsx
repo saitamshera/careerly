@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
@@ -12,13 +12,23 @@ import { Button } from '../components/ui/Button';
 
 export function AIInterviewPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { id: paramInterviewId } = useParams();
   const [searchParams] = useSearchParams();
   const urlTopic = searchParams.get('topic') || '';
   const urlType = searchParams.get('type') || '';
+  const urlId = paramInterviewId || searchParams.get('id') || null;
 
   // State Machine: 'IDLE' | 'STARTING' | 'AI_SPEAKING' | 'WAITING_FOR_CANDIDATE' | 'CANDIDATE_SPEAKING' | 'ANSWER_READY' | 'SUBMITTING_ANSWER' | 'INTERVIEW_COMPLETE' | 'ERROR'
   const [interviewState, setInterviewState] = useState('IDLE');
-  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionId, setActiveSessionId] = useState(urlId);
+
+  // Sync URL ID to activeSessionId
+  useEffect(() => {
+    if (urlId && urlId !== activeSessionId) {
+      setActiveSessionId(urlId);
+    }
+  }, [urlId]);
 
   // Transcription & UI controls
   const [showTextInput, setShowTextInput] = useState(false);
@@ -29,6 +39,7 @@ export function AIInterviewPage() {
   const [selectedType, setSelectedType] = useState(urlType || 'technical');
   const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
   const [targetRole, setTargetRole] = useState(urlTopic || 'SDE-1');
+  const [targetCompany, setTargetCompany] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [showJobDescField, setShowJobDescField] = useState(false);
 
@@ -53,7 +64,7 @@ export function AIInterviewPage() {
     setError: setSpeechError
   } = useSpeechRecognition();
 
-  // Query: User Interviews
+  // Query: User Interviews List
   const interviewsQuery = useQuery({
     queryKey: ['ai-interviews'],
     queryFn: async () => {
@@ -62,10 +73,38 @@ export function AIInterviewPage() {
     }
   });
 
+  // Query: Single Interview by ID (if direct link or deep load)
+  const singleInterviewQuery = useQuery({
+    queryKey: ['ai-interview', activeSessionId],
+    queryFn: async () => {
+      const res = await api.get(`/ai/interviews/${activeSessionId}`);
+      return res.data?.data || null;
+    },
+    enabled: Boolean(activeSessionId)
+  });
+
   const activeSession = useMemo(() => {
     if (!activeSessionId) return null;
-    return interviewsQuery.data?.find((item) => item._id === activeSessionId) || null;
-  }, [interviewsQuery.data, activeSessionId]);
+    return (
+      interviewsQuery.data?.find((item) => item._id === activeSessionId) ||
+      singleInterviewQuery.data ||
+      null
+    );
+  }, [interviewsQuery.data, singleInterviewQuery.data, activeSessionId]);
+
+  const deleteInterviewMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/ai/interviews/${id}`);
+    },
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['ai-interviews'] });
+      if (activeSessionId === deletedId) {
+        setActiveSessionId(null);
+        setInterviewState('IDLE');
+        navigate('/interview-prep');
+      }
+    }
+  });
 
   // Sync state when session changes
   useEffect(() => {
@@ -210,6 +249,7 @@ export function AIInterviewPage() {
       type: selectedType,
       difficulty: selectedDifficulty,
       targetRole: targetRole.trim() || 'SDE-1',
+      targetCompany: targetCompany.trim(),
       topic: targetRole.trim() || 'SDE-1',
       jobDescription: jobDescription.trim()
     });
@@ -288,7 +328,11 @@ ${(report.areasToImprove || session.weaknesses || []).map((w) => `- ${w}`).join(
     'Welcome. Let\'s begin by walking me through your background and the most complex software project you\'ve built.';
 
   const isSessionActive = activeSession && activeSession.status === 'in-progress';
-  const isSessionCompleted = activeSession && activeSession.status === 'completed';
+  const isSessionCompleted =
+    activeSession &&
+    (activeSession.status === 'completed' ||
+      Boolean(activeSession.evaluationReport) ||
+      Boolean(activeSession.score !== undefined && activeSession.score !== null));
 
   return (
     <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn">
@@ -324,6 +368,8 @@ ${(report.areasToImprove || session.weaknesses || []).map((w) => `- ${w}`).join(
           setSelectedDifficulty={setSelectedDifficulty}
           targetRole={targetRole}
           setTargetRole={setTargetRole}
+          targetCompany={targetCompany}
+          setTargetCompany={setTargetCompany}
           jobDescription={jobDescription}
           setJobDescription={setJobDescription}
           showJobDescField={showJobDescField}
@@ -331,7 +377,12 @@ ${(report.areasToImprove || session.weaknesses || []).map((w) => `- ${w}`).join(
           onSubmit={handleStartInterviewForm}
           isPending={startInterviewMutation.isPending}
           pastSessions={interviewsQuery.data || []}
-          onSelectSession={(id) => setActiveSessionId(id)}
+          onSelectSession={(id) => {
+            setActiveSessionId(id);
+            navigate(`/interview-prep/${id}`);
+          }}
+          onDeleteSession={(id) => deleteInterviewMutation.mutateAsync(id)}
+          isDeleting={deleteInterviewMutation.isPending}
         />
       )}
 
@@ -378,6 +429,7 @@ ${(report.areasToImprove || session.weaknesses || []).map((w) => `- ${w}`).join(
           onResetInterview={() => {
             setActiveSessionId(null);
             setInterviewState('IDLE');
+            navigate('/interview-prep');
           }}
           onDownloadReport={downloadReport}
         />

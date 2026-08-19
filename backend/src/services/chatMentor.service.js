@@ -1,7 +1,9 @@
+const crypto = require('crypto');
 const { ApiError } = require('../utils/apiError');
 const { env } = require('../config/env');
 const { logger } = require('../config/logger');
-const { z } = require('zod');
+const { User } = require('../models/User');
+const { redactText } = require('../utils/redact');
 const { generateWithGemini } = require('../utils/geminiClient');
 const {
   createConversation,
@@ -9,7 +11,9 @@ const {
   findConversationById,
   deleteConversationById,
   createChatEntry,
-  findMessagesByConversationId
+  findMessagesByConversationId,
+  createSharedConversation,
+  findSharedConversationByToken
 } = require('../repositories/ai.repository');
 
 function generateConversationTitle(prompt) {
@@ -149,6 +153,53 @@ async function deleteUserConversation(conversationId, userId) {
   return deleteConversationById(conversationId, userId);
 }
 
+async function shareUserConversation(conversationId, userId) {
+  const conversation = await findConversationById(conversationId, userId);
+  if (!conversation) {
+    throw new ApiError(404, 'Conversation not found');
+  }
+
+  const rawMessages = await findMessagesByConversationId(conversationId);
+  const user = await User.findById(userId).lean();
+
+  const userProfile = {
+    name: user?.name,
+    college: user?.college,
+    branch: user?.branch,
+    leetcodeUsername: user?.leetcodeUsername
+  };
+
+  const sanitizedMessages = rawMessages.map((msg) => {
+    const rawContent = msg.content || (msg.role === 'user' ? msg.prompt : msg.response) || '';
+    return {
+      role: msg.role,
+      content: redactText(rawContent, userProfile)
+    };
+  });
+
+  const shareToken = crypto.randomBytes(16).toString('hex');
+  await createSharedConversation({
+    shareToken,
+    title: redactText(conversation.title, userProfile),
+    messages: sanitizedMessages
+  });
+
+  return { shareToken };
+}
+
+async function getSharedConversation(shareToken) {
+  const shared = await findSharedConversationByToken(shareToken);
+  if (!shared) {
+    throw new ApiError(404, 'Shared conversation not found');
+  }
+
+  return {
+    title: shared.title,
+    messages: shared.messages,
+    createdAt: shared.createdAt
+  };
+}
+
 async function createChatMessage({ userId, conversationId, prompt, context = {} }) {
   const safePrompt = String(prompt || '').trim();
   if (!safePrompt) {
@@ -211,6 +262,9 @@ module.exports = {
   getUserConversations,
   getConversationMessages,
   deleteUserConversation,
+  shareUserConversation,
+  getSharedConversation,
   buildAssistantResponse,
   generateConversationTitle
 };
+

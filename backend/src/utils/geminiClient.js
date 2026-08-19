@@ -19,9 +19,7 @@ function getCandidateModels() {
     ...new Set([
       'gemini-flash-latest',
       'gemini-flash-lite-latest',
-      env.GEMINI_MODEL,
-      'gemini-3.5-flash',
-      'gemini-3.7-flash'
+      env.GEMINI_MODEL
     ].filter(Boolean))
   ];
 }
