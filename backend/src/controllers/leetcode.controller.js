@@ -29,8 +29,15 @@ const syncProfile = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, stats, 'LeetCode profile synced successfully'));
 });
 
+const getCalendar = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  const calendar = await leetcodeService.fetchLeetCodeCalendar(username);
+  return res.status(200).json(new ApiResponse(200, calendar, 'Calendar fetched successfully'));
+});
+
 module.exports = {
   getProfile,
   getSubmissions,
+  getCalendar,
   syncProfile
 };

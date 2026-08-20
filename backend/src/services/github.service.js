@@ -2,6 +2,7 @@ const axios = require('axios');
 const { CodingProfile } = require('../models/codingProfile.model');
 const { findUserById } = require('../repositories/user.repository');
 const { ApiError } = require('../utils/apiError');
+const { extractCleanHandle } = require('../utils/sanitizeHandle');
 const { logger } = require('../config/logger');
 
 const { env } = require('../config/env');
@@ -43,7 +44,7 @@ function handleGitHubError(error, username, operation = 'fetch profile') {
 }
 
 async function fetchGitHubProfile(username) {
-  const cleanUsername = username ? username.trim().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username);
   if (!cleanUsername) throw new ApiError(400, 'GitHub username is required');
 
   try {
@@ -70,7 +71,7 @@ async function fetchGitHubProfile(username) {
 }
 
 async function fetchGitHubRepos(username, perPage = 30) {
-  const cleanUsername = username ? username.trim().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username);
   if (!cleanUsername) return [];
 
   try {
@@ -105,21 +106,24 @@ async function fetchGitHubRepos(username, perPage = 30) {
 }
 
 async function fetchGitHubEvents(username, perPage = 20) {
-  const cleanUsername = username ? username.trim().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username);
   if (!cleanUsername) return [];
 
   try {
-    const res = await axiosInstance.get(`/users/${encodeURIComponent(cleanUsername)}/events/public`, {
-      params: { per_page: perPage }
-    });
+    let rawEvents = [];
+    try {
+      const res = await axiosInstance.get(`/users/${encodeURIComponent(cleanUsername)}/events/public`, {
+        params: { per_page: perPage }
+      });
+      rawEvents = (res.data || []).filter((event) => {
+        const actorLogin = event.actor?.login || '';
+        return actorLogin.toLowerCase() === cleanUsername.toLowerCase();
+      });
+    } catch (err) {
+      logger.warn(`GitHub public events fetch failed for ${cleanUsername}:`, err?.message);
+    }
 
-    // 1. Strict Data Integrity: Only accept events where the acting user matches cleanUsername
-    const userEvents = (res.data || []).filter((event) => {
-      const actorLogin = event.actor?.login || '';
-      return actorLogin.toLowerCase() === cleanUsername.toLowerCase();
-    });
-
-    return userEvents.map((event) => {
+    const mappedEvents = rawEvents.map((event) => {
       let actionText = 'Contributed to';
       let detail = '';
 
@@ -153,16 +157,76 @@ async function fetchGitHubEvents(username, perPage = 20) {
       }
 
       return {
-        id: event.id,
+        id: String(event.id),
         type: event.type,
         actor: event.actor?.login || cleanUsername,
         actionText,
         detail,
         repoName: event.repo?.name || '',
         repoUrl: `https://github.com/${event.repo?.name || ''}`,
-        createdAt: event.created_at
+        createdAt: event.created_at,
+        sha: event.payload?.commits?.[0]?.sha || null
       };
     });
+
+    // Fallback: Check recent commits directly on user repositories to catch any events
+    // that GitHub's public events stream omitted or delayed
+    const repoSet = new Set(mappedEvents.map((e) => e.repoName).filter(Boolean));
+    try {
+      const userReposRes = await axiosInstance.get('/user/repos', {
+        params: { per_page: 5, sort: 'pushed' }
+      });
+      (userReposRes.data || []).forEach((r) => {
+        if (r.full_name) repoSet.add(r.full_name);
+      });
+    } catch {
+      // Fallback silently if authenticated /user/repos isn't accessible
+    }
+
+    const candidateRepos = Array.from(repoSet).slice(0, 5);
+    const commitEvents = [];
+
+    for (const repo of candidateRepos) {
+      try {
+        const commitsRes = await axiosInstance.get(`/repos/${repo}/commits`, {
+          params: { author: cleanUsername, per_page: 5 }
+        });
+        (commitsRes.data || []).forEach((c) => {
+          const sha = c.sha ? c.sha.slice(0, 10) : '';
+          const msg = c.commit?.message?.split('\n')[0] || '';
+          const createdAt = c.commit?.author?.date || c.commit?.committer?.date;
+
+          // Check if this commit is already represented in public events
+          const alreadyPresent = mappedEvents.some(
+            (e) =>
+              (e.sha && e.sha.startsWith(sha)) ||
+              (e.detail === msg && Math.abs(new Date(e.createdAt) - new Date(createdAt)) < 60000)
+          );
+
+          if (!alreadyPresent) {
+            commitEvents.push({
+              id: `commit-${sha}`,
+              type: 'PushEvent',
+              actor: c.author?.login || cleanUsername,
+              actionText: 'Committed to',
+              detail: msg,
+              repoName: repo,
+              repoUrl: `https://github.com/${repo}`,
+              createdAt,
+              sha
+            });
+          }
+        });
+      } catch (err) {
+        logger.debug(`Direct commit fetch skipped for ${repo}:`, err?.message);
+      }
+    }
+
+    const allEvents = [...commitEvents, ...mappedEvents].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return allEvents.slice(0, perPage);
   } catch (error) {
     logger.warn(`GitHub events fetch failed for ${cleanUsername}:`, error?.message);
     return [];
@@ -170,7 +234,7 @@ async function fetchGitHubEvents(username, perPage = 20) {
 }
 
 async function fetchGitHubContributions(username) {
-  const cleanUsername = username ? username.trim().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username);
   if (!cleanUsername) return { totalLastYear: 0, days: [] };
 
   // 1. Try official GitHub GraphQL API if GITHUB_TOKEN is available

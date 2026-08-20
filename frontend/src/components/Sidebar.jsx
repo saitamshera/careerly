@@ -19,6 +19,7 @@ import {
   Moon
 } from 'lucide-react';
 import { clearSession } from '../app/store';
+import { queryClient } from '../app/queryClient';
 import { useTheme } from './ThemeProvider';
 
 const navSections = [
@@ -57,6 +58,7 @@ export function Sidebar() {
   const { theme, toggleTheme } = useTheme();
 
   function signOut() {
+    queryClient.clear();
     dispatch(clearSession());
     navigate('/login');
   }

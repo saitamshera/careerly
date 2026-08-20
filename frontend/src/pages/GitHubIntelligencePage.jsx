@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSelector } from 'react-redux';
 import {
   GitBranch,
   Star,
@@ -15,6 +16,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { api } from '../services/api';
+import { extractCleanHandle } from '../utils/sanitizeHandle';
 import { CodingProfilesNav } from '../components/CodingProfilesNav';
 import { Card, CardHeader } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -43,34 +45,45 @@ function formatRelativeTime(dateString) {
   if (diffSec < 60) return 'Just now';
   const mins = Math.floor(diffSec / 60);
   if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
-  const hours = Math.floor(diffSec / 60);
+  const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   const days = Math.floor(hours / 24);
   if (days === 1) return 'Yesterday';
-  if (days < 30) return `${days} days ago`;
+  if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
   const months = Math.floor(days / 30);
-  if (months === 1) return '1 month ago';
-  if (months < 12) return `${months} months ago`;
-  return `${Math.floor(months / 12)} year ago`;
+  if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+  const years = Math.floor(months / 12);
+  return `${years} year${years > 1 ? 's' : ''} ago`;
+}
+
+function formatTooltipDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  if (!y || !m || !d) return dateStr;
+  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 const LEVEL_COLORS = {
-  0: 'bg-slate-100 dark:bg-slate-800/80 border-slate-200/60 dark:border-slate-700/40',
-  1: 'bg-emerald-200 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-800/70',
-  2: 'bg-emerald-400 dark:bg-emerald-700/90 border-emerald-500 dark:border-emerald-600',
-  3: 'bg-emerald-600 dark:bg-emerald-500 border-emerald-700 dark:border-emerald-400',
-  4: 'bg-emerald-800 dark:bg-emerald-300 border-emerald-900 dark:border-emerald-200'
+  0: 'bg-slate-100 dark:bg-[#161b22] border border-slate-200/60 dark:border-white/5',
+  1: 'bg-[#9be9a8] dark:bg-[#0e4429] border border-[#7bc96f]/40 dark:border-[#006d32]/40',
+  2: 'bg-[#40c463] dark:bg-[#006d32] border border-[#30a14e]/40 dark:border-[#26a641]/40',
+  3: 'bg-[#30a14e] dark:bg-[#26a641] border border-[#216e39]/40 dark:border-[#39d353]/40',
+  4: 'bg-[#216e39] dark:bg-[#39d353] border border-[#1b552d]/40 dark:border-[#56e36d]/40'
 };
 
 export function GitHubIntelligencePage() {
   const queryClient = useQueryClient();
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentUserId = currentUser?.id || currentUser?._id || 'anon';
+
   const [handleInput, setHandleInput] = useState('');
   const [isEditingHandle, setIsEditingHandle] = useState(false);
   const [notice, setNotice] = useState(null);
 
   // 1. Fetch Coding Profiles with auto-refetch
   const profilesQuery = useQuery({
-    queryKey: ['coding-profiles'],
+    queryKey: ['coding-profiles', currentUserId],
     queryFn: async () => {
       const res = await api.get('/coding-profiles');
       return res.data?.data || [];
@@ -84,11 +97,12 @@ export function GitHubIntelligencePage() {
     return profiles.find((p) => p.platform === 'github');
   }, [profiles]);
 
-  const username = handleInput || githubProfile?.username || '';
+  const rawUsername = handleInput || githubProfile?.username || '';
+  const username = extractCleanHandle(rawUsername);
 
   // 2. Fetch GitHub Public Profile (Backend only)
   const ghUserQuery = useQuery({
-    queryKey: ['github-user', username],
+    queryKey: ['github-user', currentUserId, username],
     queryFn: async () => {
       if (!username) return null;
       const res = await api.get(`/github/profile/${encodeURIComponent(username)}`);
@@ -108,7 +122,7 @@ export function GitHubIntelligencePage() {
 
   // 3. Fetch GitHub Repositories (Backend only)
   const ghReposQuery = useQuery({
-    queryKey: ['github-repos', username],
+    queryKey: ['github-repos', currentUserId, username],
     queryFn: async () => {
       if (!username) return [];
       const res = await api.get(`/github/repos/${encodeURIComponent(username)}?perPage=30`);
@@ -128,7 +142,7 @@ export function GitHubIntelligencePage() {
 
   // 4. Fetch GitHub Recent Events / Activity (Backend only)
   const ghEventsQuery = useQuery({
-    queryKey: ['github-events', username],
+    queryKey: ['github-events', currentUserId, username],
     queryFn: async () => {
       if (!username) return [];
       const res = await api.get(`/github/events/${encodeURIComponent(username)}?perPage=15`);
@@ -148,7 +162,7 @@ export function GitHubIntelligencePage() {
 
   // 5. Fetch Genuine 12-Month Contribution Calendar (Backend only)
   const ghContributionsQuery = useQuery({
-    queryKey: ['github-contributions', username],
+    queryKey: ['github-contributions', currentUserId, username],
     queryFn: async () => {
       if (!username) return null;
       const res = await api.get(`/github/contributions/${encodeURIComponent(username)}`);
@@ -169,17 +183,18 @@ export function GitHubIntelligencePage() {
   // Sync Mutation
   const syncMutation = useMutation({
     mutationFn: async (targetHandle) => {
-      const res = await api.post('/github/sync', { username: targetHandle });
+      const cleanTarget = extractCleanHandle(targetHandle);
+      const res = await api.post('/github/sync', { username: cleanTarget });
       return res.data?.data;
     },
     onSuccess: async () => {
       setNotice({ type: 'success', text: 'GitHub profile synchronized successfully.' });
       setIsEditingHandle(false);
-      await queryClient.invalidateQueries({ queryKey: ['coding-profiles'] });
-      await queryClient.invalidateQueries({ queryKey: ['github-user'] });
-      await queryClient.invalidateQueries({ queryKey: ['github-repos'] });
-      await queryClient.invalidateQueries({ queryKey: ['github-events'] });
-      await queryClient.invalidateQueries({ queryKey: ['github-contributions'] });
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['github-user', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['github-repos', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['github-events', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['github-contributions', currentUserId] });
     },
     onError: (err) => {
       setNotice({
@@ -196,7 +211,7 @@ export function GitHubIntelligencePage() {
       return res.data?.data;
     },
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: ['coding-profiles'] });
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
       setNotice({
         type: 'success',
         text: data?.isPinned
@@ -233,6 +248,34 @@ export function GitHubIntelligencePage() {
     });
     return weeks;
   }, [contributions?.days]);
+
+  // Compute month labels aligned with week columns (Jan, Feb, Mar...)
+  const monthLabels = useMemo(() => {
+    if (contributionWeeks.length === 0) return [];
+    const labels = [];
+    let lastMonth = -1;
+
+    contributionWeeks.forEach((week, colIdx) => {
+      const firstDayStr = week[0]?.date || week.find((d) => d?.date)?.date;
+      if (!firstDayStr) return;
+      const [y, m, d] = firstDayStr.split('-');
+      if (!y || !m || !d) return;
+      const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+      const month = date.getMonth();
+
+      if (month !== lastMonth) {
+        const prevCol = labels[labels.length - 1]?.colIdx ?? -99;
+        if (colIdx - prevCol >= 2) {
+          labels.push({
+            colIdx,
+            label: date.toLocaleString('en-US', { month: 'short' })
+          });
+          lastMonth = month;
+        }
+      }
+    });
+    return labels;
+  }, [contributionWeeks]);
 
   // Calculate real stars and language distribution from verified repos
   const totalStars = useMemo(() => {
@@ -519,19 +562,40 @@ export function GitHubIntelligencePage() {
               </div>
             ) : (
               <div className="overflow-x-auto pb-2 scrollbar-thin">
-                <div className="min-w-[720px] space-y-2">
+                <div className="min-w-[750px] space-y-1.5">
+                  {/* Month Labels Row */}
+                  <div className="relative h-4 text-[10px] text-slate-500 dark:text-slate-400 font-medium select-none">
+                    {monthLabels.map(({ colIdx, label }, i) => (
+                      <span
+                        key={i}
+                        className="absolute"
+                        style={{ left: `${colIdx * 14}px` }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Grid of Weeks */}
                   <div className="flex gap-[3px]">
                     {contributionWeeks.map((week, wIdx) => (
                       <div key={wIdx} className="flex flex-col gap-[3px]">
-                        {week.map((day) => (
-                          <div
-                            key={day.date}
-                            title={`${day.count} contribution${day.count !== 1 ? 's' : ''} on ${day.date}`}
-                            className={`w-[11px] h-[11px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
-                              LEVEL_COLORS[day.level] || LEVEL_COLORS[0]
-                            }`}
-                          />
-                        ))}
+                        {week.map((day) => {
+                          const formattedDate = formatTooltipDate(day.date);
+                          const tooltip = `${day.count === 0 ? 'No' : day.count} contribution${
+                            day.count === 1 ? '' : 's'
+                          } on ${formattedDate}`;
+
+                          return (
+                            <div
+                              key={day.date}
+                              title={tooltip}
+                              className={`w-[11px] h-[11px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
+                                LEVEL_COLORS[day.level] || LEVEL_COLORS[0]
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     ))}
                   </div>

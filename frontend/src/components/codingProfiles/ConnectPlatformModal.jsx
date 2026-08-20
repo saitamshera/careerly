@@ -1,5 +1,6 @@
 import React from 'react';
-import { RefreshCw, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { extractCleanHandle } from '../../utils/sanitizeHandle';
 import { PLATFORMS_CONFIG } from '../../config/platforms.config';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -33,6 +34,23 @@ export function ConnectPlatformModal({
   isPending,
   onSubmit
 }) {
+  const handleUsernameChange = (e) => {
+    const val = e.target.value;
+    setUsername(val);
+  };
+
+  const handleUsernameBlur = () => {
+    const clean = extractCleanHandle(username);
+    if (clean && clean !== username) {
+      setUsername(clean);
+      if (!profileUrl && selectedPlatform) {
+        const plat = PLATFORMS_CONFIG.find((p) => p.id === selectedPlatform);
+        if (plat?.baseUrl) {
+          setProfileUrl(`${plat.baseUrl}${clean}`);
+        }
+      }
+    }
+  };
   return (
     <Modal
       isOpen={show}
@@ -94,9 +112,10 @@ export function ConnectPlatformModal({
               <input
                 type="text"
                 required
-                placeholder="e.g. your_handle"
+                placeholder="e.g. your_handle or profile link"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
+                onBlur={handleUsernameBlur}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
               />
             </div>

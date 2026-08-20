@@ -48,6 +48,7 @@ function GmailCallbackHandler() {
   );
 }
 
+import { queryClient } from './app/queryClient';
 import { TopNav } from './components/TopNav';
 
 export default function App() {
@@ -63,6 +64,7 @@ export default function App() {
     setLoading(true);
     try {
       const data = await loginUser(formData);
+      queryClient.clear();
       dispatch(setSession({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
       navigate('/dashboard');
     } finally {
@@ -74,6 +76,7 @@ export default function App() {
     setLoading(true);
     try {
       const data = await registerUser(formData);
+      queryClient.clear();
       dispatch(setSession({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
       navigate('/dashboard');
     } finally {
@@ -86,6 +89,7 @@ export default function App() {
     try {
       const body = typeof payload === 'string' ? { credential: payload } : payload;
       const data = await googleLoginUser(body);
+      queryClient.clear();
       dispatch(setSession({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
       navigate('/dashboard');
     } finally {

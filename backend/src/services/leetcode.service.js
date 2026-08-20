@@ -1,8 +1,9 @@
 const { findUserById } = require('../repositories/user.repository');
+const { extractCleanHandle } = require('../utils/sanitizeHandle');
 const { logger } = require('../config/logger');
 
 async function fetchLeetCodeProfile(username) {
-  const cleanUsername = username ? username.trim().toLowerCase().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username).toLowerCase();
   if (!cleanUsername) throw new Error('Username is required');
 
   // Try Provider 1: Alfa LeetCode API
@@ -104,7 +105,7 @@ async function fetchLeetCodeProfile(username) {
 }
 
 async function fetchRecentSubmissions(username, limit = 10) {
-  const cleanUsername = username ? username.trim().toLowerCase().replace(/^@/, '') : '';
+  const cleanUsername = extractCleanHandle(username).toLowerCase();
   if (!cleanUsername) return [];
 
   // Try Provider 1: Alfa LeetCode API
@@ -158,6 +159,88 @@ async function fetchRecentSubmissions(username, limit = 10) {
   return [];
 }
 
+async function fetchLeetCodeCalendar(username) {
+  const cleanUsername = extractCleanHandle(username).toLowerCase();
+  if (!cleanUsername) return { streak: 0, totalActiveDays: 0, totalSubmissions: 0, days: [] };
+
+  try {
+    const query = `
+      query userProfileCalendar($username: String!) {
+        matchedUser(username: $username) {
+          userCalendar {
+            activeYears
+            streak
+            totalActiveDays
+            submissionCalendar
+          }
+        }
+      }
+    `;
+
+    const res = await fetch('https://leetcode.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://leetcode.com'
+      },
+      body: JSON.stringify({ query, variables: { username: cleanUsername } })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      const userCal = json.data?.matchedUser?.userCalendar;
+      if (userCal) {
+        let parsedMap = {};
+        try {
+          parsedMap = JSON.parse(userCal.submissionCalendar || '{}');
+        } catch {
+          parsedMap = {};
+        }
+
+        const dateCounts = {};
+        let totalSubmissions = 0;
+        for (const [timestampStr, count] of Object.entries(parsedMap)) {
+          const timestampSec = parseInt(timestampStr, 10);
+          if (!isNaN(timestampSec)) {
+            const dateObj = new Date(timestampSec * 1000);
+            const dateKey = dateObj.toISOString().slice(0, 10);
+            dateCounts[dateKey] = (dateCounts[dateKey] || 0) + Number(count || 0);
+            totalSubmissions += Number(count || 0);
+          }
+        }
+
+        const today = new Date();
+        const days = [];
+        for (let i = 364; i >= 0; i--) {
+          const d = new Date(today.getTime() - i * 86400000);
+          const dateKey = d.toISOString().slice(0, 10);
+          const count = dateCounts[dateKey] || 0;
+          let level = 0;
+          if (count > 0) {
+            if (count <= 2) level = 1;
+            else if (count <= 4) level = 2;
+            else if (count <= 7) level = 3;
+            else level = 4;
+          }
+          days.push({ date: dateKey, count, level });
+        }
+
+        return {
+          streak: userCal.streak || 0,
+          totalActiveDays: userCal.totalActiveDays || 0,
+          totalSubmissions,
+          days
+        };
+      }
+    }
+  } catch (err) {
+    logger.warn(`Failed to fetch LeetCode calendar for ${cleanUsername}: ${err.message}`);
+  }
+
+  return { streak: 0, totalActiveDays: 0, totalSubmissions: 0, days: [] };
+}
+
 async function syncLeetCodeToUser(userId, username) {
   const profile = await fetchLeetCodeProfile(username);
   const user = await findUserById(userId);
@@ -181,8 +264,10 @@ async function syncLeetCodeToUser(userId, username) {
 module.exports = {
   fetchLeetCodeProfile,
   fetchRecentSubmissions,
+  fetchLeetCodeCalendar,
   syncLeetCodeToUser,
   getUserLeetCodeProfile: fetchLeetCodeProfile,
   getUserRecentSubmissions: fetchRecentSubmissions,
+  getUserCalendar: fetchLeetCodeCalendar,
   syncUserLeetCodeStats: syncLeetCodeToUser
 };

@@ -1,6 +1,8 @@
 const {
   getUserCodingProfiles,
   upsertUserCodingProfile,
+  syncSingleProfile,
+  syncAllUserProfiles,
   removeUserCodingProfile
 } = require('../services/codingProfile.service');
 
@@ -24,6 +26,27 @@ async function upsertProfile(req, res, next) {
   }
 }
 
+async function syncProfileHandler(req, res, next) {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { profileId } = req.params;
+    const profile = await syncSingleProfile(userId, profileId);
+    return res.status(200).json({ status: 'success', data: profile, message: 'Profile synced successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function syncAllProfilesHandler(req, res, next) {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const profiles = await syncAllUserProfiles(userId);
+    return res.status(200).json({ status: 'success', data: profiles, message: 'All profiles synced successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function deleteProfile(req, res, next) {
   try {
     const userId = req.user?.id || req.user?._id;
@@ -38,5 +61,7 @@ async function deleteProfile(req, res, next) {
 module.exports = {
   getProfiles,
   upsertProfile,
+  syncProfileHandler,
+  syncAllProfilesHandler,
   deleteProfile
 };

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Globe,
@@ -22,6 +23,7 @@ import {
   Users
 } from 'lucide-react';
 import { api } from '../services/api';
+import { extractCleanHandle } from '../utils/sanitizeHandle';
 import { CodingProfilesNav } from '../components/CodingProfilesNav';
 import { PLATFORMS_CONFIG } from '../config/platforms.config';
 import { ConnectPlatformModal } from '../components/codingProfiles/ConnectPlatformModal';
@@ -32,10 +34,26 @@ import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 
+function formatSyncTime(dateString) {
+  if (!dateString) return 'Never';
+  const elapsed = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  if (isNaN(elapsed) || elapsed < 0) return 'just now';
+  if (elapsed < 10) return 'just now';
+  if (elapsed < 60) return `${elapsed}s ago`;
+  const mins = Math.floor(elapsed / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
 export function CodingProfilesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const analysisRef = useRef(null);
+
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentUserId = currentUser?.id || currentUser?._id || 'anon';
 
   // Modal & Form state
   const [showModal, setShowModal] = useState(false);
@@ -56,16 +74,17 @@ export function CodingProfilesPage() {
 
   // Fetch Coding Profiles
   const profilesQuery = useQuery({
-    queryKey: ['coding-profiles'],
+    queryKey: ['coding-profiles', currentUserId],
     queryFn: async () => {
       const res = await api.get('/coding-profiles');
       return res.data?.data || [];
-    }
+    },
+    refetchOnWindowFocus: true
   });
 
   // Fetch DSA Tracker summary stats
   const { data: dsaStats } = useQuery({
-    queryKey: ['dsa-stats'],
+    queryKey: ['dsa-stats', currentUserId],
     queryFn: async () => (await api.get('/dsa/stats')).data?.data
   });
 
@@ -74,6 +93,51 @@ export function CodingProfilesPage() {
   }, [dsaStats]);
 
   const dsaStreak = dsaStats?.streak || 0;
+
+  // Sync All Mutation
+  const syncAllMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/coding-profiles/sync-all');
+      return res.data?.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['dsa-stats', currentUserId] });
+      setFeedbackNotice({
+        type: 'success',
+        message: 'All connected profiles synchronized successfully.'
+      });
+      setTimeout(() => setFeedbackNotice(null), 3000);
+    },
+    onError: (err) => {
+      setFeedbackNotice({
+        type: 'error',
+        message: err.response?.data?.message || 'Sync failed. Please try again.'
+      });
+    }
+  });
+
+  // Single Profile Sync Mutation
+  const syncSingleMutation = useMutation({
+    mutationFn: async (profileId) => {
+      const res = await api.post(`/coding-profiles/${profileId}/sync`);
+      return res.data?.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
+      setFeedbackNotice({
+        type: 'success',
+        message: 'Profile synchronized with live platform data.'
+      });
+      setTimeout(() => setFeedbackNotice(null), 3000);
+    },
+    onError: (err) => {
+      setFeedbackNotice({
+        type: 'error',
+        message: err.response?.data?.message || 'Sync failed for this profile.'
+      });
+    }
+  });
 
   // Upsert Mutation
   const upsertMutation = useMutation({
@@ -86,7 +150,7 @@ export function CodingProfilesPage() {
         type: 'success',
         message: 'Profile connected successfully.'
       });
-      await queryClient.invalidateQueries({ queryKey: ['coding-profiles'] });
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
       setTimeout(() => {
         setShowModal(false);
         resetForm();
@@ -110,7 +174,7 @@ export function CodingProfilesPage() {
       await api.delete(`/coding-profiles/${profileId}`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['coding-profiles'] });
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
     }
   });
 
@@ -156,9 +220,11 @@ export function CodingProfilesPage() {
       globalRank: globalRank || 'N/A'
     };
 
+    const cleanUsername = extractCleanHandle(username);
+
     upsertMutation.mutate({
       platform: selectedPlatform,
-      username: username.trim(),
+      username: cleanUsername,
       profileUrl: profileUrl.trim(),
       isSelfReported,
       stats: statsPayload
@@ -208,8 +274,9 @@ export function CodingProfilesPage() {
 
       const r = Number(s.currentRating || 0);
       const mr = Number(s.maxRating || 0);
-      if (r > highestRating) highestRating = r;
-      if (mr > highestRating) highestRating = mr;
+      // Valid contest ratings are <= 4000; ignores user global rank numbers (e.g. 1.9M)
+      if (r > highestRating && r <= 4000) highestRating = r;
+      if (mr > highestRating && mr <= 4000) highestRating = mr;
     });
 
     return {
@@ -244,6 +311,18 @@ export function CodingProfilesPage() {
         description="Connect your LeetCode, GitHub, and competitive coding profiles to unify your telemetry and generate recruiter-grade proof of work."
         action={
           <div className="flex items-center gap-2.5">
+            {hasConnectedProfiles && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={RefreshCw}
+                isLoading={syncAllMutation.isPending}
+                onClick={() => syncAllMutation.mutate()}
+              >
+                {syncAllMutation.isPending ? 'Syncing All...' : 'Sync All'}
+              </Button>
+            )}
+
             <Button
               variant="secondary"
               size="sm"
@@ -418,6 +497,15 @@ export function CodingProfilesPage() {
                         className="flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <button
+                          type="button"
+                          onClick={() => syncSingleMutation.mutate(prof._id)}
+                          disabled={syncSingleMutation.isPending && syncSingleMutation.variables === prof._id}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition cursor-pointer"
+                          title="Sync Now"
+                        >
+                          <RefreshCw className={`h-3.5 w-3.5 ${syncSingleMutation.isPending && syncSingleMutation.variables === prof._id ? 'animate-spin text-emerald-600' : ''}`} />
+                        </button>
                         {prof.profileUrl && (
                           <a
                             href={prof.profileUrl}
@@ -449,7 +537,7 @@ export function CodingProfilesPage() {
                         @{prof.username}
                       </p>
                       <p className="text-[0.68rem] text-slate-400">
-                        Last synced: {prof.lastSyncedAt ? new Date(prof.lastSyncedAt).toLocaleDateString() : 'Today'}
+                        Last synced: {formatSyncTime(prof.lastSyncedAt)}
                       </p>
                     </div>
 
@@ -471,7 +559,7 @@ export function CodingProfilesPage() {
                         <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
                           {prof.platform === 'github'
                             ? stats.followers || 0
-                            : stats.currentRating > 0
+                            : stats.currentRating > 0 && stats.currentRating <= 4000
                             ? stats.currentRating
                             : stats.globalRank || 'N/A'}
                         </span>

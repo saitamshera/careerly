@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
   Flame,
@@ -17,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { api } from '../services/api';
+import { extractCleanHandle } from '../utils/sanitizeHandle';
 import { CodingProfilesNav } from '../components/CodingProfilesNav';
 import { Card, CardHeader } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
@@ -26,6 +28,22 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 
 const COMPANY_LIST = ['Amazon', 'Google', 'Microsoft', 'Meta', 'Atlassian', 'Apple', 'Uber', 'Netflix'];
+
+function formatTooltipDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  if (!y || !m || !d) return dateStr;
+  const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const LEVEL_COLORS = {
+  0: 'bg-slate-100 dark:bg-[#161b22] border border-slate-200/60 dark:border-white/5',
+  1: 'bg-[#9be9a8] dark:bg-[#0e4429] border border-[#7bc96f]/40 dark:border-[#006d32]/40',
+  2: 'bg-[#40c463] dark:bg-[#006d32] border border-[#30a14e]/40 dark:border-[#26a641]/40',
+  3: 'bg-[#30a14e] dark:bg-[#26a641] border border-[#216e39]/40 dark:border-[#39d353]/40',
+  4: 'bg-[#216e39] dark:bg-[#39d353] border border-[#1b552d]/40 dark:border-[#56e36d]/40'
+};
 
 async function fetchPublicLeetCodeProfile(username) {
   const clean = encodeURIComponent(username.trim().replace(/^@/, ''));
@@ -44,6 +62,9 @@ async function fetchPublicLeetCodeProfile(username) {
 
 export function LeetCodeIntelligencePage() {
   const queryClient = useQueryClient();
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentUserId = currentUser?.id || currentUser?._id || 'anon';
+
   const [selectedCompany, setSelectedCompany] = useState('All');
   const [handleInput, setHandleInput] = useState('');
   const [isEditingHandle, setIsEditingHandle] = useState(false);
@@ -51,7 +72,7 @@ export function LeetCodeIntelligencePage() {
 
   // Fetch Coding Profiles
   const profilesQuery = useQuery({
-    queryKey: ['coding-profiles'],
+    queryKey: ['coding-profiles', currentUserId],
     queryFn: async () => {
       const res = await api.get('/coding-profiles');
       return res.data?.data || [];
@@ -60,7 +81,7 @@ export function LeetCodeIntelligencePage() {
 
   // Fetch user profile
   const userProfileQuery = useQuery({
-    queryKey: ['user-profile'],
+    queryKey: ['user-profile', currentUserId],
     queryFn: async () => {
       const res = await api.get('/profile');
       return res.data?.data || {};
@@ -74,11 +95,12 @@ export function LeetCodeIntelligencePage() {
     return profiles.find((p) => p.platform === 'leetcode');
   }, [profiles]);
 
-  const username = handleInput || leetcodeProfile?.username || userProfile?.leetcodeUsername || '';
+  const rawUsername = handleInput || leetcodeProfile?.username || userProfile?.leetcodeUsername || '';
+  const username = extractCleanHandle(rawUsername).toLowerCase();
 
   // Fetch Live Submissions
   const submissionsQuery = useQuery({
-    queryKey: ['leetcode-submissions', username],
+    queryKey: ['leetcode-submissions', currentUserId, username],
     queryFn: async () => {
       if (!username) return [];
       try {
@@ -92,9 +114,20 @@ export function LeetCodeIntelligencePage() {
     enabled: Boolean(username)
   });
 
+  // Fetch LeetCode 12-Month Calendar
+  const calendarQuery = useQuery({
+    queryKey: ['leetcode-calendar', currentUserId, username],
+    queryFn: async () => {
+      if (!username) return null;
+      const res = await api.get(`/leetcode/calendar/${encodeURIComponent(username)}`);
+      return res.data?.data;
+    },
+    enabled: Boolean(username)
+  });
+
   // Fetch Logged DSA Problems
   const dsaQuery = useQuery({
-    queryKey: ['dsa-problems'],
+    queryKey: ['dsa-problems', currentUserId],
     queryFn: async () => {
       const res = await api.get('/dsa');
       return res.data?.data || [];
@@ -104,37 +137,39 @@ export function LeetCodeIntelligencePage() {
   // Sync Mutation
   const syncMutation = useMutation({
     mutationFn: async (targetHandle) => {
+      const cleanTarget = extractCleanHandle(targetHandle).toLowerCase();
       try {
         const res = await api.post('/coding-profiles', {
           platform: 'leetcode',
-          username: targetHandle
+          username: cleanTarget
         });
-        await api.post('/profile/sync-leetcode', { username: targetHandle }).catch(() => {});
+        await api.post('/profile/sync-leetcode', { username: cleanTarget }).catch(() => {});
         return res.data?.data;
       } catch (apiError) {
-        const publicStats = await fetchPublicLeetCodeProfile(targetHandle);
+        const publicStats = await fetchPublicLeetCodeProfile(cleanTarget);
         const res = await api.post('/coding-profiles', {
           platform: 'leetcode',
-          username: targetHandle,
+          username: cleanTarget,
           stats: {
             totalSolved: publicStats.totalSolved,
             easySolved: publicStats.easySolved,
             mediumSolved: publicStats.mediumSolved,
             hardSolved: publicStats.hardSolved,
-            currentRating: publicStats.ranking,
+            currentRating: 0,
             globalRank: `#${publicStats.ranking}`
           }
         });
-        await api.post('/profile/sync-leetcode', { username: targetHandle, stats: publicStats }).catch(() => {});
+        await api.post('/profile/sync-leetcode', { username: cleanTarget, stats: publicStats }).catch(() => {});
         return res.data?.data;
       }
     },
     onSuccess: async () => {
       setNotice({ type: 'success', text: 'LeetCode profile synchronized successfully.' });
       setIsEditingHandle(false);
-      await queryClient.invalidateQueries({ queryKey: ['coding-profiles'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['leetcode-submissions'] });
+      await queryClient.invalidateQueries({ queryKey: ['coding-profiles', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['leetcode-submissions', currentUserId] });
+      await queryClient.invalidateQueries({ queryKey: ['leetcode-calendar', currentUserId] });
     },
     onError: (error) => {
       setNotice({
@@ -147,6 +182,51 @@ export function LeetCodeIntelligencePage() {
   const leetcodeStats = leetcodeProfile?.stats || userProfile?.leetcodeStats || {};
   const dsaProblems = dsaQuery.data || [];
   const submissions = submissionsQuery.data || [];
+  const calendarData = calendarQuery.data;
+
+  // Group verified days into weekly columns for 12-month calendar heatmap
+  const contributionWeeks = useMemo(() => {
+    const days = calendarData?.days || [];
+    if (days.length === 0) return [];
+    const weeks = [];
+    let currentWeek = [];
+    days.forEach((day, idx) => {
+      currentWeek.push(day);
+      if (currentWeek.length === 7 || idx === days.length - 1) {
+        weeks.push(currentWeek);
+        currentWeek = [];
+      }
+    });
+    return weeks;
+  }, [calendarData?.days]);
+
+  // Compute month labels aligned with week columns (Jan, Feb, Mar...)
+  const monthLabels = useMemo(() => {
+    if (contributionWeeks.length === 0) return [];
+    const labels = [];
+    let lastMonth = -1;
+
+    contributionWeeks.forEach((week, colIdx) => {
+      const firstDayStr = week[0]?.date || week.find((d) => d?.date)?.date;
+      if (!firstDayStr) return;
+      const [y, m, d] = firstDayStr.split('-');
+      if (!y || !m || !d) return;
+      const date = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+      const month = date.getMonth();
+
+      if (month !== lastMonth) {
+        const prevCol = labels[labels.length - 1]?.colIdx ?? -99;
+        if (colIdx - prevCol >= 2) {
+          labels.push({
+            colIdx,
+            label: date.toLocaleString('en-US', { month: 'short' })
+          });
+          lastMonth = month;
+        }
+      }
+    });
+    return labels;
+  }, [contributionWeeks]);
 
   // Company tagged problem counts
   const companyCounts = useMemo(() => {
@@ -202,6 +282,9 @@ export function LeetCodeIntelligencePage() {
   const easyPct = totalSolved > 0 ? Math.round((easySolved / totalSolved) * 100) : 0;
   const medPct = totalSolved > 0 ? Math.round((mediumSolved / totalSolved) * 100) : 0;
   const hardPct = totalSolved > 0 ? Math.round((hardSolved / totalSolved) * 100) : 0;
+
+  const rawRank = leetcodeStats.globalRank || leetcodeStats.currentRating || userProfile?.leetcodeStats?.ranking || '';
+  const displayRank = rawRank ? (String(rawRank).startsWith('#') ? rawRank : `#${rawRank}`) : 'Unranked';
 
   return (
     <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
@@ -297,7 +380,7 @@ export function LeetCodeIntelligencePage() {
 
         <MetricCard
           title="Global Standing"
-          value={leetcodeStats.globalRank || leetcodeStats.currentRating ? `#${leetcodeStats.globalRank || leetcodeStats.currentRating}` : 'Unranked'}
+          value={displayRank}
           subtitle="Contest ranking"
           icon={Award}
           accent="blue"
@@ -311,6 +394,97 @@ export function LeetCodeIntelligencePage() {
           accent="purple"
         />
       </div>
+
+      {/* LeetCode Submission Activity Heatmap */}
+      <Card className="p-6 space-y-4 border-slate-200/80 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4.5 w-4.5 text-amber-500" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Submission Activity
+            </h3>
+          </div>
+          {calendarData?.days && calendarData.days.length > 0 && (
+            <div className="flex items-center gap-2">
+              {calendarData.streak > 0 && (
+                <Badge variant="orange" size="sm" className="font-mono">
+                  🔥 {calendarData.streak} day streak
+                </Badge>
+              )}
+              <Badge variant="blue" size="sm" className="font-mono">
+                {calendarData.totalActiveDays} active days in the last year
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {!calendarData || !calendarData.days || calendarData.days.length === 0 ? (
+          <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+            <p className="font-semibold text-slate-700 dark:text-slate-300">
+              No submission activity available yet.
+            </p>
+            <p className="text-slate-400">
+              Sync your LeetCode account to load verified submission activity.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto pb-2 scrollbar-thin">
+            <div className="min-w-[750px] space-y-1.5">
+              {/* Month Labels Row */}
+              <div className="relative h-4 text-[10px] text-slate-500 dark:text-slate-400 font-medium select-none">
+                {monthLabels.map(({ colIdx, label }, i) => (
+                  <span
+                    key={i}
+                    className="absolute"
+                    style={{ left: `${colIdx * 14}px` }}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              {/* Grid of Weeks */}
+              <div className="flex gap-[3px]">
+                {contributionWeeks.map((week, wIdx) => (
+                  <div key={wIdx} className="flex flex-col gap-[3px]">
+                    {week.map((day) => {
+                      const formattedDate = formatTooltipDate(day.date);
+                      const tooltip = `${day.count === 0 ? 'No' : day.count} submission${
+                        day.count === 1 ? '' : 's'
+                      } on ${formattedDate}`;
+
+                      return (
+                        <div
+                          key={day.date}
+                          title={tooltip}
+                          className={`w-[11px] h-[11px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
+                            LEVEL_COLORS[day.level] || LEVEL_COLORS[0]
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* Heatmap Legend */}
+              <div className="flex items-center justify-between pt-2 text-[0.68rem] text-slate-500">
+                <span>Last 12 months verified activity</span>
+                <div className="flex items-center gap-1.5">
+                  <span>Less</span>
+                  {[0, 1, 2, 3, 4].map((lvl) => (
+                    <div
+                      key={lvl}
+                      className={`w-[10px] h-[10px] rounded-[2px] ${LEVEL_COLORS[lvl]}`}
+                    />
+                  ))}
+                  <span>More</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Difficulty Breakdown Bar */}
       <Card className="space-y-4">
