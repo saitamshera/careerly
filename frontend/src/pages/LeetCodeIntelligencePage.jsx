@@ -1,21 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
 import {
   Flame,
   Award,
-  ExternalLink,
   Code2,
   TrendingUp,
   Sparkles,
   RefreshCw,
-  Search,
   CheckCircle2,
   Calendar,
-  Building2,
-  AlertCircle,
-  ArrowRight
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import { extractCleanHandle } from '../utils/sanitizeHandle';
@@ -25,7 +20,6 @@ import { MetricCard } from '../components/ui/MetricCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { EmptyState } from '../components/ui/EmptyState';
 
 const COMPANY_LIST = ['Amazon', 'Google', 'Microsoft', 'Meta', 'Atlassian', 'Apple', 'Uber', 'Netflix'];
 
@@ -38,11 +32,11 @@ function formatTooltipDate(dateStr) {
 }
 
 const LEVEL_COLORS = {
-  0: 'bg-slate-100 dark:bg-[#161b22] border border-slate-200/60 dark:border-white/5',
-  1: 'bg-[#9be9a8] dark:bg-[#0e4429] border border-[#7bc96f]/40 dark:border-[#006d32]/40',
-  2: 'bg-[#40c463] dark:bg-[#006d32] border border-[#30a14e]/40 dark:border-[#26a641]/40',
-  3: 'bg-[#30a14e] dark:bg-[#26a641] border border-[#216e39]/40 dark:border-[#39d353]/40',
-  4: 'bg-[#216e39] dark:bg-[#39d353] border border-[#1b552d]/40 dark:border-[#56e36d]/40'
+  0: 'bg-[#F7F4ED] border border-[#E3DED3]',
+  1: 'bg-[#C8E0D0] border border-[#B3D3BE]',
+  2: 'bg-[#8FBF9F] border border-[#78AC8A]',
+  3: 'bg-[#538E6A] border border-[#427958]',
+  4: 'bg-[#315B45] border border-[#234533]'
 };
 
 async function fetchPublicLeetCodeProfile(username) {
@@ -145,7 +139,7 @@ export function LeetCodeIntelligencePage() {
         });
         await api.post('/profile/sync-leetcode', { username: cleanTarget }).catch(() => {});
         return res.data?.data;
-      } catch (apiError) {
+      } catch {
         const publicStats = await fetchPublicLeetCodeProfile(cleanTarget);
         const res = await api.post('/coding-profiles', {
           platform: 'leetcode',
@@ -200,7 +194,7 @@ export function LeetCodeIntelligencePage() {
     return weeks;
   }, [calendarData?.days]);
 
-  // Compute month labels aligned with week columns (Jan, Feb, Mar...)
+  // Compute month labels aligned with week columns
   const monthLabels = useMemo(() => {
     if (contributionWeeks.length === 0) return [];
     const labels = [];
@@ -242,18 +236,6 @@ export function LeetCodeIntelligencePage() {
     return map;
   }, [dsaProblems]);
 
-  // Topic distribution
-  const topicDistribution = useMemo(() => {
-    const counts = {};
-    dsaProblems.forEach((p) => {
-      const t = p.topic || 'General';
-      counts[t] = (counts[t] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8);
-  }, [dsaProblems]);
-
   // Filtered DSA Problems
   const filteredDsaProblems = useMemo(() => {
     if (selectedCompany === 'All') return dsaProblems;
@@ -287,7 +269,7 @@ export function LeetCodeIntelligencePage() {
   const displayRank = rawRank ? (String(rawRank).startsWith('#') ? rawRank : `#${rawRank}`) : 'Unranked';
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* Sub Nav */}
       <CodingProfilesNav profiles={profiles} />
 
@@ -295,8 +277,8 @@ export function LeetCodeIntelligencePage() {
       <SectionHeader
         eyebrow="PLATFORM INTELLIGENCE"
         title={
-          <span className="flex items-center gap-2.5">
-            <Flame className="h-6 w-6 text-amber-500 shrink-0" />
+          <span className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-[#C9683A] shrink-0" />
             <span>LeetCode Intelligence</span>
           </span>
         }
@@ -309,10 +291,10 @@ export function LeetCodeIntelligencePage() {
                 value={handleInput}
                 onChange={(e) => setHandleInput(e.target.value)}
                 placeholder="LeetCode username..."
-                className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] outline-none focus:border-[#315B45]"
               />
             ) : (
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-bold text-[#20211E]">
                 @{username}
               </span>
             )}
@@ -344,23 +326,23 @@ export function LeetCodeIntelligencePage() {
 
       {notice && (
         <div
-          className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+          className={`p-3 rounded-lg text-xs font-semibold flex items-center gap-2 ${
             notice.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+              ? 'bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]'
+              : 'bg-[#FDECEB] text-[#B83A35] border border-[#F7CBC9]'
           }`}
         >
           {notice.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="h-4 w-4 text-[#315B45]" />
           ) : (
-            <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+            <AlertCircle className="h-4 w-4 text-[#B83A35]" />
           )}
           <span>{notice.text}</span>
         </div>
       )}
 
       {/* Overview Metric Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           title="Total Solved"
           value={`${totalSolved}`}
@@ -396,11 +378,11 @@ export function LeetCodeIntelligencePage() {
       </div>
 
       {/* LeetCode Submission Activity Heatmap */}
-      <Card className="p-6 space-y-4 border-slate-200/80 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+      <Card className="p-5 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#E3DED3]">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4.5 w-4.5 text-amber-500" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <Calendar className="h-4 w-4 text-[#C9683A]" />
+            <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
               Submission Activity
             </h3>
           </div>
@@ -412,31 +394,31 @@ export function LeetCodeIntelligencePage() {
                 </Badge>
               )}
               <Badge variant="blue" size="sm" className="font-mono">
-                {calendarData.totalActiveDays} active days in the last year
+                {calendarData.totalActiveDays} active days
               </Badge>
             </div>
           )}
         </div>
 
         {!calendarData || !calendarData.days || calendarData.days.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-            <p className="font-semibold text-slate-700 dark:text-slate-300">
+          <div className="py-6 text-center text-xs text-[#74766F] space-y-1">
+            <p className="font-semibold text-[#20211E]">
               No submission activity available yet.
             </p>
-            <p className="text-slate-400">
-              Sync your LeetCode account to load verified submission activity.
+            <p className="text-[#5F625C]">
+              Sync your LeetCode account to load verified activity.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto pb-2 scrollbar-thin">
-            <div className="min-w-[750px] space-y-1.5">
+          <div className="overflow-x-auto pb-2">
+            <div className="min-w-[700px] space-y-1">
               {/* Month Labels Row */}
-              <div className="relative h-4 text-[10px] text-slate-500 dark:text-slate-400 font-medium select-none">
+              <div className="relative h-4 text-[10px] text-[#74766F] font-medium select-none">
                 {monthLabels.map(({ colIdx, label }, i) => (
                   <span
                     key={i}
                     className="absolute"
-                    style={{ left: `${colIdx * 14}px` }}
+                    style={{ left: `${colIdx * 13}px` }}
                   >
                     {label}
                   </span>
@@ -457,7 +439,7 @@ export function LeetCodeIntelligencePage() {
                         <div
                           key={day.date}
                           title={tooltip}
-                          className={`w-[11px] h-[11px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
+                          className={`w-[10px] h-[10px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
                             LEVEL_COLORS[day.level] || LEVEL_COLORS[0]
                           }`}
                         />
@@ -468,14 +450,14 @@ export function LeetCodeIntelligencePage() {
               </div>
 
               {/* Heatmap Legend */}
-              <div className="flex items-center justify-between pt-2 text-[0.68rem] text-slate-500">
+              <div className="flex items-center justify-between pt-2 text-[0.68rem] text-[#74766F]">
                 <span>Last 12 months verified activity</span>
                 <div className="flex items-center gap-1.5">
                   <span>Less</span>
                   {[0, 1, 2, 3, 4].map((lvl) => (
                     <div
                       key={lvl}
-                      className={`w-[10px] h-[10px] rounded-[2px] ${LEVEL_COLORS[lvl]}`}
+                      className={`w-[9px] h-[9px] rounded-[2px] ${LEVEL_COLORS[lvl]}`}
                     />
                   ))}
                   <span>More</span>
@@ -487,30 +469,30 @@ export function LeetCodeIntelligencePage() {
       </Card>
 
       {/* Difficulty Breakdown Bar */}
-      <Card className="space-y-4">
+      <Card className="space-y-3 p-4">
         <CardHeader
           title="Difficulty Distribution"
           subtitle="Balance between foundational, interview standard, and algorithmic depth."
         />
 
         <div className="space-y-2">
-          <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
-            <div style={{ width: `${easyPct}%` }} className="bg-emerald-500 transition-all duration-500" title={`Easy: ${easySolved}`} />
-            <div style={{ width: `${medPct}%` }} className="bg-amber-500 transition-all duration-500" title={`Medium: ${mediumSolved}`} />
-            <div style={{ width: `${hardPct}%` }} className="bg-rose-500 transition-all duration-500" title={`Hard: ${hardSolved}`} />
+          <div className="h-2.5 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden flex">
+            <div style={{ width: `${easyPct}%` }} className="bg-[#315B45] transition-all duration-300" title={`Easy: ${easySolved}`} />
+            <div style={{ width: `${medPct}%` }} className="bg-[#B9822E] transition-all duration-300" title={`Medium: ${mediumSolved}`} />
+            <div style={{ width: `${hardPct}%` }} className="bg-[#C9683A] transition-all duration-300" title={`Hard: ${hardSolved}`} />
           </div>
 
           <div className="flex items-center justify-between text-xs font-semibold pt-1">
-            <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-[#315B45] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#315B45]" />
               Easy: {easySolved} ({easyPct}%)
             </span>
-            <span className="text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-[#B9822E] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#B9822E]" />
               Medium: {mediumSolved} ({medPct}%)
             </span>
-            <span className="text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="text-[#C9683A] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#C9683A]" />
               Hard: {hardSolved} ({hardPct}%)
             </span>
           </div>
@@ -518,22 +500,22 @@ export function LeetCodeIntelligencePage() {
       </Card>
 
       {/* Company Tagging & Recent Submissions Section */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
         {/* Company Filter & Breakdown */}
-        <Card className="space-y-4">
+        <Card className="space-y-3 p-4">
           <CardHeader
             title="Company Tag Coverage"
             subtitle="Problems solved associated with major tech hiring bars."
           />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => setSelectedCompany('All')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+              className={`px-2 py-0.5 rounded-md text-xs font-semibold border transition cursor-pointer ${
                 selectedCompany === 'All'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold dark:bg-emerald-950/50 dark:text-emerald-300'
-                  : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                  ? 'bg-[#E8F0EA] text-[#315B45] border-[#D1E0D7] font-bold'
+                  : 'bg-[#F7F4ED] text-[#5F625C] border-[#E3DED3]'
               }`}
             >
               All ({dsaProblems.length})
@@ -543,10 +525,10 @@ export function LeetCodeIntelligencePage() {
                 key={comp}
                 type="button"
                 onClick={() => setSelectedCompany(comp)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md text-xs font-semibold border transition cursor-pointer ${
                   selectedCompany === comp
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold dark:bg-emerald-950/50 dark:text-emerald-300'
-                    : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                    ? 'bg-[#E8F0EA] text-[#315B45] border-[#D1E0D7] font-bold'
+                    : 'bg-[#F7F4ED] text-[#5F625C] border-[#E3DED3]'
                 }`}
               >
                 {comp} ({companyCounts[comp] || 0})
@@ -554,15 +536,15 @@ export function LeetCodeIntelligencePage() {
             ))}
           </div>
 
-          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
             {filteredDsaProblems.slice(0, 8).map((p) => (
               <div
                 key={p._id}
-                className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                className="p-2 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] flex items-center justify-between text-xs hover:bg-[#F7F4ED] transition"
               >
                 <div className="min-w-0 pr-2">
-                  <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.title}</p>
-                  <p className="text-[0.68rem] text-slate-400">{p.topic}</p>
+                  <p className="font-bold text-[#20211E] truncate">{p.title}</p>
+                  <p className="text-[0.68rem] text-[#74766F]">{p.topic}</p>
                 </div>
                 <Badge variant={p.difficulty === 'easy' ? 'green' : p.difficulty === 'hard' ? 'red' : 'orange'} size="sm">
                   {p.difficulty}
@@ -573,28 +555,28 @@ export function LeetCodeIntelligencePage() {
         </Card>
 
         {/* Live Submissions Feed */}
-        <Card className="space-y-4">
+        <Card className="space-y-3 p-4">
           <CardHeader
             title="Recent Live Submissions"
-            subtitle="Verified via LeetCode GraphQL endpoint."
+            subtitle="Verified via LeetCode endpoint."
           />
 
           {submissions.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">
+            <div className="p-6 text-center text-xs text-[#74766F]">
               No recent live submissions retrieved yet. Click "Sync LeetCode" to pull live telemetry.
             </div>
           ) : (
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
               {submissions.slice(0, 10).map((sub, sIdx) => (
                 <div
                   key={sIdx}
-                  className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                  className="p-2 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] flex items-center justify-between text-xs hover:bg-[#F7F4ED] transition"
                 >
                   <div className="min-w-0 pr-2">
-                    <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                    <p className="font-bold text-[#20211E] truncate">
                       {sub.title || sub.titleSlug}
                     </p>
-                    <p className="text-[0.68rem] text-slate-400">
+                    <p className="text-[0.68rem] text-[#74766F]">
                       {sub.timestamp ? new Date(Number(sub.timestamp) * 1000).toLocaleDateString() : 'Recent'}
                     </p>
                   </div>

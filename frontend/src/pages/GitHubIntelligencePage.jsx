@@ -65,11 +65,11 @@ function formatTooltipDate(dateStr) {
 }
 
 const LEVEL_COLORS = {
-  0: 'bg-slate-100 dark:bg-[#161b22] border border-slate-200/60 dark:border-white/5',
-  1: 'bg-[#9be9a8] dark:bg-[#0e4429] border border-[#7bc96f]/40 dark:border-[#006d32]/40',
-  2: 'bg-[#40c463] dark:bg-[#006d32] border border-[#30a14e]/40 dark:border-[#26a641]/40',
-  3: 'bg-[#30a14e] dark:bg-[#26a641] border border-[#216e39]/40 dark:border-[#39d353]/40',
-  4: 'bg-[#216e39] dark:bg-[#39d353] border border-[#1b552d]/40 dark:border-[#56e36d]/40'
+  0: 'bg-[#F7F4ED] border border-[#E3DED3]',
+  1: 'bg-[#C8E0D0] border border-[#B3D3BE]',
+  2: 'bg-[#8FBF9F] border border-[#78AC8A]',
+  3: 'bg-[#538E6A] border border-[#427958]',
+  4: 'bg-[#315B45] border border-[#234533]'
 };
 
 export function GitHubIntelligencePage() {
@@ -249,7 +249,7 @@ export function GitHubIntelligencePage() {
     return weeks;
   }, [contributions?.days]);
 
-  // Compute month labels aligned with week columns (Jan, Feb, Mar...)
+  // Compute month labels aligned with week columns
   const monthLabels = useMemo(() => {
     if (contributionWeeks.length === 0) return [];
     const labels = [];
@@ -277,7 +277,6 @@ export function GitHubIntelligencePage() {
     return labels;
   }, [contributionWeeks]);
 
-  // Calculate real stars and language distribution from verified repos
   const totalStars = useMemo(() => {
     return repos.reduce((sum, r) => sum + (r.stars || 0), 0);
   }, [repos]);
@@ -325,7 +324,7 @@ export function GitHubIntelligencePage() {
   const isError = ghUserQuery.isError && !ghUser;
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* Sub Nav */}
       <CodingProfilesNav profiles={profiles} />
 
@@ -333,39 +332,27 @@ export function GitHubIntelligencePage() {
       <SectionHeader
         eyebrow="ENGINEERING PROOF OF WORK"
         title={
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <span className="flex items-center gap-2.5">
-              <GitBranch className="h-6 w-6 text-purple-600 dark:text-purple-400 shrink-0" />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <span className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5 text-[#315B45] shrink-0" />
               <span>GitHub Activity & Portfolio</span>
             </span>
 
             {/* Live Sync State Badge */}
             {syncMutation.isPending ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 animate-pulse">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7] animate-pulse">
                 <RefreshCw className="w-3 h-3 animate-spin" />
                 <span>Syncing GitHub...</span>
               </span>
             ) : syncMutation.isError ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-[#FDECEB] text-[#B83A35] border border-[#F7CBC9]">
                 <AlertCircle className="w-3 h-3" />
                 <span>Sync failed</span>
-                {githubProfile?.lastSyncedAt && (
-                  <>
-                    <span className="text-slate-300 dark:text-slate-600">•</span>
-                    <span className="text-slate-500 dark:text-slate-400 font-normal">
-                      Last successful: {formatSyncTime(githubProfile.lastSyncedAt)}
-                    </span>
-                  </>
-                )}
               </span>
             ) : githubProfile ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.68rem] font-semibold bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]">
                 <CheckCircle2 className="w-3 h-3" />
-                <span>GitHub Connected</span>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <span className="text-slate-500 dark:text-slate-400 font-normal">
-                  Last synced {formatSyncTime(githubProfile.lastSyncedAt) || 'just now'}
-                </span>
+                <span>Connected</span>
               </span>
             ) : null}
           </div>
@@ -379,10 +366,10 @@ export function GitHubIntelligencePage() {
                 value={handleInput}
                 onChange={(e) => setHandleInput(e.target.value)}
                 placeholder="GitHub username..."
-                className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] outline-none focus:border-[#315B45]"
               />
             ) : (
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-bold text-[#20211E]">
                 @{username}
               </span>
             )}
@@ -415,17 +402,17 @@ export function GitHubIntelligencePage() {
       {/* Notice Banner */}
       {notice && (
         <div
-          className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 ${
+          className={`p-3 rounded-lg text-xs font-semibold flex items-center justify-between gap-2 ${
             notice.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+              ? 'bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]'
+              : 'bg-[#FDECEB] text-[#B83A35] border border-[#F7CBC9]'
           }`}
         >
           <div className="flex items-center gap-2">
             {notice.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-[#315B45] shrink-0" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <AlertCircle className="h-4 w-4 text-[#B83A35] shrink-0" />
             )}
             <span>{notice.text}</span>
           </div>
@@ -434,7 +421,7 @@ export function GitHubIntelligencePage() {
               size="sm"
               variant="outline"
               onClick={() => syncMutation.mutate(username)}
-              className="text-[0.7rem] py-1 px-2.5 h-auto"
+              className="text-[0.7rem] py-1 px-2 h-auto"
             >
               Retry
             </Button>
@@ -444,16 +431,14 @@ export function GitHubIntelligencePage() {
 
       {/* Error Fallback Banner */}
       {isError && (
-        <Card className="p-6 border-rose-200 dark:border-rose-900/50 bg-rose-50/40 dark:bg-rose-950/20 text-center space-y-3">
-          <AlertCircle className="h-6 w-6 text-rose-600 dark:text-rose-400 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+        <Card className="p-5 border-[#F7CBC9] bg-[#FDECEB]/40 text-center space-y-2.5">
+          <AlertCircle className="h-5 w-5 text-[#B83A35] mx-auto" />
+          <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
             {ghUserQuery.error?.response?.data?.message || `Unable to load GitHub activity for @${username}`}
           </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <p className="text-xs text-[#5F625C] max-w-md mx-auto">
             {ghUserQuery.error?.response?.status === 404
-              ? `GitHub user '${username}' does not exist on GitHub. Please check the spelling.`
-              : ghUserQuery.error?.response?.status === 429
-              ? 'GitHub API rate limit reached. Please wait a moment or configure a GITHUB_TOKEN in your environment.'
+              ? `GitHub user '${username}' does not exist. Please check the spelling.`
               : 'Please check your connection or retry synchronization.'}
           </p>
           <Button
@@ -464,31 +449,18 @@ export function GitHubIntelligencePage() {
               queryClient.invalidateQueries({ queryKey: ['github-events'] });
               queryClient.invalidateQueries({ queryKey: ['github-contributions'] });
             }}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
           >
             Retry Loading
           </Button>
         </Card>
       )}
 
-      {/* Loading Skeletons */}
-      {isLoading && !ghUser && (
-        <div className="space-y-6 animate-pulse">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-            ))}
-          </div>
-          <div className="h-48 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-        </div>
-      )}
-
-      {/* Empty State - No GitHub connected */}
+      {/* Empty State */}
       {!username && !isLoading && (
         <EmptyState
           icon={FolderGit2}
           title="No GitHub account connected"
-          description="Enter your GitHub username above or connect your account to display verified engineering activity, contributions, and featured projects."
+          description="Enter your GitHub username above to display verified activity, contributions, and featured projects."
         />
       )}
 
@@ -496,9 +468,9 @@ export function GitHubIntelligencePage() {
       {username && ghUser && (
         <>
           {/* 1. Overview Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <MetricCard
-              title="Public Repositories"
+              title="Public Repos"
               value={`${ghUser?.publicRepos ?? repos.length}`}
               subtitle="Open-source projects"
               icon={FolderGit2}
@@ -508,13 +480,13 @@ export function GitHubIntelligencePage() {
             <MetricCard
               title="Stars Received"
               value={`${totalStars}`}
-              subtitle="Across public repositories"
+              subtitle="Across repositories"
               icon={Star}
               accent="orange"
             />
 
             <MetricCard
-              title="Followers & Reach"
+              title="Followers"
               value={`${ghUser?.followers ?? 0}`}
               subtitle={`${ghUser?.following ?? 0} following`}
               icon={Users}
@@ -535,41 +507,40 @@ export function GitHubIntelligencePage() {
           </div>
 
           {/* 2. Contribution Activity Heatmap */}
-          <Card className="p-6 space-y-4 border-slate-200/80 dark:border-slate-800">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <Card className="p-5 space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#E3DED3]">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <Calendar className="h-4 w-4 text-[#315B45]" />
+                <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
                   Contribution Activity
                 </h3>
               </div>
               {contributions?.days && contributions.days.length > 0 && (
-                <Badge variant="green" size="sm" className="self-start sm:self-auto font-mono">
+                <Badge variant="green" size="sm" className="font-mono">
                   {contributions.totalLastYear} contributions in the last year
                 </Badge>
               )}
             </div>
 
-            {/* If no real contribution days available, show honest empty state */}
             {!contributions || !contributions.days || contributions.days.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                <p className="font-semibold text-slate-700 dark:text-slate-300">
+              <div className="py-6 text-center text-xs text-[#74766F] space-y-1">
+                <p className="font-semibold text-[#20211E]">
                   No contribution history available yet.
                 </p>
-                <p className="text-slate-400">
+                <p className="text-[#5F625C]">
                   Sync your GitHub account to load verified contribution activity.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto pb-2 scrollbar-thin">
-                <div className="min-w-[750px] space-y-1.5">
+              <div className="overflow-x-auto pb-2">
+                <div className="min-w-[700px] space-y-1">
                   {/* Month Labels Row */}
-                  <div className="relative h-4 text-[10px] text-slate-500 dark:text-slate-400 font-medium select-none">
+                  <div className="relative h-4 text-[10px] text-[#74766F] font-medium select-none">
                     {monthLabels.map(({ colIdx, label }, i) => (
                       <span
                         key={i}
                         className="absolute"
-                        style={{ left: `${colIdx * 14}px` }}
+                        style={{ left: `${colIdx * 13}px` }}
                       >
                         {label}
                       </span>
@@ -590,7 +561,7 @@ export function GitHubIntelligencePage() {
                             <div
                               key={day.date}
                               title={tooltip}
-                              className={`w-[11px] h-[11px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
+                              className={`w-[10px] h-[10px] rounded-[2px] transition-transform hover:scale-125 cursor-pointer ${
                                 LEVEL_COLORS[day.level] || LEVEL_COLORS[0]
                               }`}
                             />
@@ -601,14 +572,14 @@ export function GitHubIntelligencePage() {
                   </div>
 
                   {/* Heatmap Legend */}
-                  <div className="flex items-center justify-between pt-2 text-[0.68rem] text-slate-500">
+                  <div className="flex items-center justify-between pt-2 text-[0.68rem] text-[#74766F]">
                     <span>Last 12 months verified activity</span>
                     <div className="flex items-center gap-1.5">
                       <span>Less</span>
                       {[0, 1, 2, 3, 4].map((lvl) => (
                         <div
                           key={lvl}
-                          className={`w-[10px] h-[10px] rounded-[2px] ${LEVEL_COLORS[lvl]}`}
+                          className={`w-[9px] h-[9px] rounded-[2px] ${LEVEL_COLORS[lvl]}`}
                         />
                       ))}
                       <span>More</span>
@@ -620,53 +591,48 @@ export function GitHubIntelligencePage() {
           </Card>
 
           {/* 3. Recent Engineering Activity & Active Projects Grid */}
-          <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
             {/* Recent Engineering Activity Stream */}
-            <Card className="space-y-4">
+            <Card className="space-y-3 p-4">
               <CardHeader
                 title="Recent Engineering Activity"
                 subtitle="Live event log from verified GitHub activity."
               />
 
               {events.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                  <p className="font-semibold text-slate-700 dark:text-slate-300">
-                    No recent GitHub activity found.
-                  </p>
-                  <p className="text-slate-400">
-                    Sync your GitHub account to start tracking engineering activity.
-                  </p>
+                <div className="py-6 text-center text-xs text-[#74766F]">
+                  No recent GitHub activity found.
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
                   {events.slice(0, 10).map((ev) => (
                     <div
                       key={ev.id}
-                      className="p-3 rounded-xl border border-slate-100 dark:border-slate-800/90 flex items-start gap-3 text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                      className="p-2.5 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] flex items-start gap-2.5 text-xs hover:bg-[#F7F4ED] transition"
                     >
-                      <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 shrink-0 mt-0.5">
-                        <GitBranch className="h-4 w-4" />
+                      <div className="p-1 rounded bg-[#E8F0EA] text-[#315B45] shrink-0 mt-0.5">
+                        <GitBranch className="h-3.5 w-3.5" />
                       </div>
-                      <div className="min-w-0 flex-1 space-y-1">
+                      <div className="min-w-0 flex-1 space-y-0.5">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          <p className="font-semibold text-[#20211E] truncate">
                             {ev.actionText}{' '}
                             <a
                               href={ev.repoUrl || `https://github.com/${ev.repoName}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+                              className="font-bold text-[#20211E] hover:text-[#315B45] transition"
                             >
                               {ev.repoName}
                             </a>
                           </p>
-                          <span className="text-[0.68rem] text-slate-400 shrink-0 whitespace-nowrap font-medium">
+                          <span className="text-[0.68rem] text-[#74766F] shrink-0 font-medium">
                             {formatRelativeTime(ev.createdAt)}
                           </span>
                         </div>
 
                         {ev.detail && (
-                          <p className="text-[0.72rem] text-slate-500 dark:text-slate-400 line-clamp-2 font-mono bg-slate-50/70 dark:bg-slate-900/60 p-1.5 rounded-md border border-slate-100 dark:border-slate-800">
+                          <p className="text-[0.7rem] text-[#5F625C] line-clamp-1 font-mono bg-[#F7F4ED] p-1 rounded border border-[#E3DED3]">
                             "{ev.detail}"
                           </p>
                         )}
@@ -678,44 +644,44 @@ export function GitHubIntelligencePage() {
             </Card>
 
             {/* Active Projects Indicator */}
-            <Card className="space-y-4">
+            <Card className="space-y-3 p-4">
               <CardHeader
                 title="Active Projects"
                 subtitle="Repositories with recent engineering updates."
               />
 
               {activeProjects.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">
+                <div className="p-6 text-center text-xs text-[#74766F]">
                   No public repositories found.
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {activeProjects.map((repo) => (
                     <div
                       key={repo.id}
-                      className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                      className="p-2.5 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] flex items-center justify-between gap-2 text-xs hover:bg-[#F7F4ED] transition"
                     >
                       <div className="min-w-0 flex-1">
                         <a
                           href={repo.htmlUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 truncate flex items-center gap-1.5"
+                          className="font-bold text-[#20211E] hover:text-[#315B45] truncate flex items-center gap-1"
                         >
                           <span className="truncate">{repo.name}</span>
-                          <ExternalLink className="h-3 w-3 shrink-0 text-slate-400" />
+                          <ExternalLink className="h-3 w-3 shrink-0 text-[#74766F]" />
                         </a>
-                        <p className="text-[0.68rem] text-slate-400 mt-0.5">
+                        <p className="text-[0.68rem] text-[#74766F] mt-0.5">
                           Updated {formatRelativeTime(repo.updatedAt)}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Badge variant="neutral" size="sm">
                           {repo.language}
                         </Badge>
-                        <span className="flex items-center gap-1 text-[0.7rem] text-slate-500">
-                          <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                        <span className="flex items-center gap-0.5 text-[0.7rem] text-[#74766F]">
+                          <Star className="h-3 w-3 text-[#B9822E] fill-[#B9822E]" />
                           <span>{repo.stars}</span>
                         </span>
                       </div>
@@ -727,51 +693,51 @@ export function GitHubIntelligencePage() {
           </div>
 
           {/* 4. Featured Showcase Projects */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between pb-1 border-b border-[#E3DED3]">
               <div className="flex items-center gap-2">
-                <Pin className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <Pin className="h-4 w-4 text-[#315B45]" />
+                <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
                   Featured Showcase Projects
                 </h3>
               </div>
-              <span className="text-xs text-slate-500">
-                Pin key repositories to showcase architecture to interviewers
+              <span className="text-xs text-[#74766F]">
+                Pin key repositories to showcase architecture
               </span>
             </div>
 
             {featuredRepos.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {featuredRepos.map((repo) => (
-                  <Card key={repo.id} className="flex flex-col justify-between space-y-4">
-                    <div className="space-y-2">
+                  <Card key={repo.id} className="flex flex-col justify-between space-y-3 p-3.5">
+                    <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xs font-bold font-mono text-[#315B45]">
                           {repo.language}
                         </span>
                         <button
                           type="button"
                           onClick={() => pinRepoMutation.mutate(repo.name)}
-                          className="p-1 rounded text-amber-500 hover:text-slate-400 transition"
+                          className="p-1 rounded text-[#B9822E] hover:text-[#74766F] transition"
                           title="Unpin repository"
                         >
-                          <Pin className="h-4 w-4 fill-amber-500" />
+                          <Pin className="h-3.5 w-3.5 fill-[#B9822E]" />
                         </button>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{repo.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      <h4 className="text-xs sm:text-sm font-bold text-[#20211E]">{repo.name}</h4>
+                      <p className="text-xs text-[#5F625C] line-clamp-2 leading-relaxed">
                         {repo.description || 'Production repository with clean architecture.'}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-3 text-slate-500">
+                    <div className="pt-2 border-t border-[#E3DED3] flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2.5 text-[#74766F]">
                         <span className="flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5" />
+                          <Star className="h-3 w-3" />
                           <span>{repo.stars}</span>
                         </span>
                         <span className="flex items-center gap-1">
-                          <GitFork className="h-3.5 w-3.5" />
+                          <GitFork className="h-3 w-3" />
                           <span>{repo.forks}</span>
                         </span>
                       </div>
@@ -780,7 +746,7 @@ export function GitHubIntelligencePage() {
                         href={repo.htmlUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                        className="inline-flex items-center gap-1 text-[#315B45] font-bold hover:underline"
                       >
                         <span>Inspect</span>
                         <ExternalLink className="h-3 w-3" />
@@ -799,24 +765,24 @@ export function GitHubIntelligencePage() {
           </section>
 
           {/* 5. All Repositories Table */}
-          <Card className="space-y-4">
+          <Card className="space-y-3 p-4">
             <CardHeader
               title="All Repositories"
               subtitle={`${repos.length} public repositories found`}
             />
 
             {repos.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400">
+              <div className="p-6 text-center text-xs text-[#74766F]">
                 No public repositories found for @{username}.
               </div>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                 {repos.map((repo) => {
                   const isPinned = featuredRepoNames.includes(repo.name);
                   return (
                     <div
                       key={repo.id}
-                      className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 flex items-start justify-between gap-3 text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                      className="p-2.5 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] flex items-start justify-between gap-2.5 text-xs hover:bg-[#F7F4ED] transition"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -824,7 +790,7 @@ export function GitHubIntelligencePage() {
                             href={repo.htmlUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 truncate"
+                            className="font-bold text-[#20211E] hover:text-[#315B45] truncate"
                           >
                             {repo.name}
                           </a>
@@ -832,32 +798,32 @@ export function GitHubIntelligencePage() {
                             {repo.language}
                           </Badge>
                         </div>
-                        <p className="text-[0.68rem] text-slate-400 line-clamp-1 mt-0.5">
+                        <p className="text-[0.68rem] text-[#74766F] line-clamp-1 mt-0.5">
                           {repo.description || 'Public GitHub project repository.'}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => pinRepoMutation.mutate(repo.name)}
-                          className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                          className={`p-1 rounded-md border transition cursor-pointer ${
                             isPinned
-                              ? 'border-amber-300 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:border-amber-800'
-                              : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-500'
+                              ? 'border-[#D1E0D7] bg-[#E8F0EA] text-[#315B45]'
+                              : 'border-[#E3DED3] text-[#74766F] hover:text-[#B9822E]'
                           }`}
                           title={isPinned ? 'Unpin' : 'Pin to showcase'}
                         >
-                          <Pin className={`h-3.5 w-3.5 ${isPinned ? 'fill-amber-500' : ''}`} />
+                          <Pin className={`h-3 w-3 ${isPinned ? 'fill-[#315B45]' : ''}`} />
                         </button>
 
                         <a
                           href={repo.htmlUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 transition"
+                          className="p-1 rounded-md text-[#74766F] hover:text-[#315B45] transition"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
                     </div>

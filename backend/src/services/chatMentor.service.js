@@ -5,6 +5,7 @@ const { logger } = require('../config/logger');
 const { User } = require('../models/User');
 const { redactText } = require('../utils/redact');
 const { generateWithGemini } = require('../utils/geminiClient');
+const { extractTextFromDocument } = require('../utils/documentExtractor');
 const {
   createConversation,
   findConversationsByUserId,
@@ -55,7 +56,7 @@ function generateConversationTitle(prompt) {
 }
 
 function buildAssistantResponse(prompt, context) {
-  const lowerPrompt = prompt.toLowerCase();
+  const lowerPrompt = (prompt || '').toLowerCase();
 
   if (lowerPrompt.includes('salary')) {
     return 'When discussing salary expectations, benchmark your target role using levels.fyi and Glassdoor. Provide a tight range rather than a fixed number and anchor your value to specific technical accomplishments.';
@@ -100,14 +101,16 @@ Core Persona & Communication Style:
   * For simple, short, or follow-up questions: keep answers concise (typically 100-350 words). Answer the exact question immediately without unnecessary background preamble.
   * Only provide long, detailed, multi-phase frameworks when the user explicitly asks for a complete roadmap, comprehensive guide, study plan, or deep breakdown.
 - Context-Aware & Direct: Seamlessly build upon previous messages in the conversation. Never restart explanations from scratch or re-introduce yourself when answering a follow-up.
+- Document Analysis: When an attached document is provided in the candidate's input, thoroughly analyze its text, highlight specific strengths and concrete areas for improvement, and address any user questions directly.
 - Avoid Formulaic Headers: Do NOT automatically use generic headers like "Phase 1 / Phase 2 / Phase 3", "Golden Rules", or "Concrete Next Steps" unless explicitly requested.
-- No Absolute Claims or False Certainty: Never present uncertain advice as absolute fact. Avoid definitive assertions about careers, salaries, recruiters, hiring outcomes, fixed timelines, or technologies (e.g. avoid "This is definitely the right choice", "Companies will never...", "6 months is enough", "You will fail if..."). Be honest and realistic without being overly negative or dramatic.
-- Explicit Decision Factors: When a recommendation depends on the candidate's specific situation, clearly identify the factors that matter and state your reasoning (e.g. "It depends on X and Y. Based on what you've told me, I'd lean toward...").
-- Missing Context Handling: If critical context is missing to give a precise answer, state what it depends on and ask the candidate for the specific detail or exact message instead of making blind assumptions.
-- Single Focused Follow-up: When helpful, end with ONE direct, relevant follow-up question or offer to inspect their specific draft/message, rather than a list of generic follow-up options.
+- No Absolute Claims or False Certainty: Never present uncertain advice as absolute fact. Avoid definitive assertions about careers, salaries, recruiters, hiring outcomes, fixed timelines, or technologies.
+- Explicit Decision Factors: When a recommendation depends on the candidate's specific situation, clearly identify the factors that matter and state your reasoning.
+- Missing Context Handling: If critical context is missing to give a precise answer, state what it depends on and ask the candidate for the specific detail.
+- Single Focused Follow-up: When helpful, end with ONE direct, relevant follow-up question or offer to inspect their specific draft/message.
 - No Fabrications: Never invent personal facts or background not provided by the candidate.
 ${historyText ? `\nConversation History:\n${historyText}\n` : ''}
-Latest message from candidate: "${prompt}"
+Latest message from candidate:
+${prompt}
 
 Respond as the Career Mentor:`;
 
@@ -173,7 +176,8 @@ async function shareUserConversation(conversationId, userId) {
     const rawContent = msg.content || (msg.role === 'user' ? msg.prompt : msg.response) || '';
     return {
       role: msg.role,
-      content: redactText(rawContent, userProfile)
+      content: redactText(rawContent, userProfile),
+      metadata: msg.metadata || {}
     };
   });
 
@@ -200,10 +204,33 @@ async function getSharedConversation(shareToken) {
   };
 }
 
-async function createChatMessage({ userId, conversationId, prompt, context = {} }) {
-  const safePrompt = String(prompt || '').trim();
-  if (!safePrompt) {
+async function createChatMessage({ userId, conversationId, prompt, context = {}, file = null }) {
+  let rawPrompt = String(prompt || '').trim();
+  let extractedDocText = '';
+  let attachmentMeta = null;
+
+  if (file) {
+    extractedDocText = await extractTextFromDocument(file);
+    const sanitizedFilename = String(file.originalname || 'document').replace(/[^\w\s\-\.\(\)]/g, '_');
+    attachmentMeta = {
+      name: sanitizedFilename,
+      size: file.size,
+      mimeType: file.mimetype
+    };
+
+    if (!rawPrompt) {
+      rawPrompt = `Review and analyze this attached document: ${sanitizedFilename}`;
+    }
+  }
+
+  if (!rawPrompt) {
     throw new ApiError(400, 'Chat prompt is required');
+  }
+
+  // Construct the prompt passed to the AI
+  let promptForAI = rawPrompt;
+  if (extractedDocText && attachmentMeta) {
+    promptForAI = `[Attached Document: ${attachmentMeta.name}]\n"""\n${extractedDocText}\n"""\n\nCandidate Request: ${rawPrompt}`;
   }
 
   let conversation = null;
@@ -212,7 +239,7 @@ async function createChatMessage({ userId, conversationId, prompt, context = {} 
   }
 
   if (!conversation) {
-    const title = generateConversationTitle(safePrompt);
+    const title = generateConversationTitle(rawPrompt);
     conversation = await createConversation({
       userId,
       title,
@@ -224,16 +251,21 @@ async function createChatMessage({ userId, conversationId, prompt, context = {} 
   }
 
   const previousMessages = await findMessagesByConversationId(conversation._id);
-  const response = await generateChatMentorResponseWithAI(safePrompt, context, userId, previousMessages);
+  const response = await generateChatMentorResponseWithAI(promptForAI, context, userId, previousMessages);
+
+  const userMeta = {
+    ...context,
+    ...(attachmentMeta ? { attachment: attachmentMeta } : {})
+  };
 
   await createChatEntry({
     conversationId: conversation._id,
     userId,
     role: 'user',
-    content: safePrompt,
-    prompt: safePrompt,
+    content: rawPrompt,
+    prompt: rawPrompt,
     response: '',
-    metadata: context
+    metadata: userMeta
   });
 
   await createChatEntry({
@@ -241,7 +273,7 @@ async function createChatMessage({ userId, conversationId, prompt, context = {} 
     userId,
     role: 'assistant',
     content: response,
-    prompt: safePrompt,
+    prompt: rawPrompt,
     response,
     metadata: context
   });
@@ -256,6 +288,25 @@ async function createChatMessage({ userId, conversationId, prompt, context = {} 
   };
 }
 
+async function renameUserConversation(conversationId, userId, title) {
+  const cleanTitle = String(title || '').trim();
+  if (!cleanTitle) {
+    throw new ApiError(400, 'Conversation title is required');
+  }
+
+  const updated = await updateConversation(conversationId, userId, { title: cleanTitle });
+  if (!updated) {
+    throw new ApiError(404, 'Conversation not found');
+  }
+
+  return {
+    _id: updated._id,
+    id: updated._id,
+    title: updated.title,
+    updatedAt: updated.updatedAt
+  };
+}
+
 module.exports = {
   createChatMessage,
   getUserChatHistory,
@@ -264,6 +315,7 @@ module.exports = {
   deleteUserConversation,
   shareUserConversation,
   getSharedConversation,
+  renameUserConversation,
   buildAssistantResponse,
   generateConversationTitle
 };

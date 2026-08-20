@@ -51,6 +51,7 @@ export function ConnectPlatformModal({
       }
     }
   };
+
   return (
     <Modal
       isOpen={show}
@@ -62,24 +63,23 @@ export function ConnectPlatformModal({
       <div className="space-y-4">
         {feedbackNotice && (
           <div
-            className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
-              feedbackNotice.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-            }`}
+            className={`p-3 rounded-lg text-xs font-semibold flex items-center gap-2 ${feedbackNotice.type === 'success'
+              ? 'bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]'
+              : 'bg-[#FDECEB] text-[#B83A35] border border-[#F7CBC9]'
+              }`}
           >
             {feedbackNotice.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#315B45]" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-[#B83A35]" />
             )}
             <span>{feedbackNotice.message}</span>
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="space-y-4 text-xs">
+        <form onSubmit={onSubmit} className="space-y-3.5 text-xs">
           <div>
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+            <label className="block text-xs font-bold text-[#20211E] mb-1.5">
               Select Platform
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -90,11 +90,10 @@ export function ConnectPlatformModal({
                     key={plat.id}
                     type="button"
                     onClick={() => setSelectedPlatform(plat.id)}
-                    className={`flex items-center gap-2 p-2 rounded-xl border text-left transition cursor-pointer ${
-                      isSelected
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700 font-bold'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
-                    }`}
+                    className={`flex items-center gap-2 p-2 rounded-lg border text-left transition cursor-pointer ${isSelected
+                      ? 'border-[#315B45] bg-[#E8F0EA] text-[#315B45] font-bold'
+                      : 'border-[#E5E0D6] hover:border-[#D6D0C4] bg-[#FFFDF8] text-[#20211E]'
+                      }`}
                   >
                     {plat.icon({ className: 'h-4 w-4 shrink-0' })}
                     <span className="text-xs truncate">{plat.name}</span>
@@ -104,119 +103,83 @@ export function ConnectPlatformModal({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                Username / Handle
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. your_handle or profile link"
-                value={username}
-                onChange={handleUsernameChange}
-                onBlur={handleUsernameBlur}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                Profile URL <span className="text-[0.65rem] text-slate-400 font-normal">(Optional)</span>
-              </label>
-              <input
-                type="url"
-                placeholder="https://..."
-                value={profileUrl}
-                onChange={(e) => setProfileUrl(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
+              Username / Handle / URL
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. tour_de_force or https://leetcode.com/u/user/"
+              value={username}
+              onChange={handleUsernameChange}
+              onBlur={handleUsernameBlur}
+              className="w-full rounded-lg border border-[#E5E0D6] bg-[#FFFDF8] px-3 py-2 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
+            />
+            <p className="text-[0.68rem] text-[#92928A] mt-1">
+              Tip: Paste full URL or just the username handle.
+            </p>
           </div>
 
-          {/* Self Reported / Manual Stats Checkbox */}
-          <div className="pt-1">
-            <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+          <div>
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
+              Profile Link (Optional)
+            </label>
+            <input
+              type="url"
+              placeholder="https://..."
+              value={profileUrl}
+              onChange={(e) => setProfileUrl(e.target.value)}
+              className="w-full rounded-lg border border-[#E5E0D6] bg-[#FFFDF8] px-3 py-2 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
+            />
+          </div>
+
+          {/* Self-report Toggle */}
+          <div className="p-3 rounded-lg border border-[#E5E0D6] bg-[#F5F2EA] space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={isSelfReported}
                 onChange={(e) => setIsSelfReported(e.target.checked)}
-                className="rounded text-emerald-600 focus:ring-emerald-500"
+                className="w-3.5 h-3.5 accent-[#315B45] rounded"
               />
-              <span className="font-semibold text-xs">Self-report / Manually enter stats</span>
+              <span className="text-xs font-bold text-[#20211E]">
+                Enter / override stats manually
+              </span>
             </label>
-          </div>
 
-          {isSelfReported && (
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {isSelfReported && (
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E0D6]">
                 <div>
-                  <label className="block text-[0.65rem] font-bold text-slate-500 mb-1">Total</label>
+                  <label className="block text-[0.68rem] text-[#6F7068] mb-0.5 font-medium">Total Solved</label>
                   <input
                     type="number"
                     value={totalSolved}
                     onChange={(e) => setTotalSolved(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
+                    className="w-full rounded-md border border-[#E5E0D6] bg-[#FFFDF8] px-2 py-1 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
+                    placeholder="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-[0.65rem] font-bold text-emerald-600 mb-1">Easy</label>
-                  <input
-                    type="number"
-                    value={easySolved}
-                    onChange={(e) => setEasySolved(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[0.65rem] font-bold text-amber-600 mb-1">Medium</label>
-                  <input
-                    type="number"
-                    value={mediumSolved}
-                    onChange={(e) => setMediumSolved(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[0.65rem] font-bold text-rose-600 mb-1">Hard</label>
-                  <input
-                    type="number"
-                    value={hardSolved}
-                    onChange={(e) => setHardSolved(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[0.65rem] font-bold text-slate-500 mb-1">Rating</label>
+                  <label className="block text-[0.68rem] text-[#6F7068] mb-0.5 font-medium">Contest Rating</label>
                   <input
                     type="number"
                     value={currentRating}
                     onChange={(e) => setCurrentRating(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[0.65rem] font-bold text-slate-500 mb-1">Global Rank</label>
-                  <input
-                    type="number"
-                    value={globalRank}
-                    onChange={(e) => setGlobalRank(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none"
+                    className="w-full rounded-md border border-[#E5E0D6] bg-[#FFFDF8] px-2 py-1 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
+                    placeholder="e.g. 1850"
                   />
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#F0ECE4] flex items-center justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" size="sm" isLoading={isPending}>
-              Connect & Sync
+              {isPending ? 'Verifying...' : 'Save & Sync'}
             </Button>
           </div>
         </form>

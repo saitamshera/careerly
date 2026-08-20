@@ -2,14 +2,10 @@ import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Code2,
   ExternalLink,
   CheckCircle2,
   AlertTriangle,
   ArrowLeft,
-  Sparkles,
-  Layers,
-  Flame,
   Target
 } from 'lucide-react';
 import { api } from '../services/api';
@@ -98,54 +94,10 @@ const TOPIC_PROBLEMS = {
       difficulty: 'Easy',
       pattern: 'DFS / Depth Calculation',
       url: 'https://leetcode.com/problems/maximum-depth-of-binary-tree/',
-      reason: 'Basic divide-and-conquer tree height calculation.'
-    },
-    {
-      title: 'Binary Tree Level Order Traversal',
-      difficulty: 'Medium',
-      pattern: 'Queue BFS',
-      url: 'https://leetcode.com/problems/binary-tree-level-order-traversal/',
-      reason: 'Core breadth-first traversal by level.'
-    },
-    {
-      title: 'Lowest Common Ancestor of a Binary Tree',
-      difficulty: 'Medium',
-      pattern: 'Recursive Post-Order',
-      url: 'https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/',
-      reason: 'Classic tree branch division and node bubbling.'
-    }
-  ],
-  'binary-search': [
-    {
-      title: 'Binary Search',
-      difficulty: 'Easy',
-      pattern: 'Basic Range Halving',
-      url: 'https://leetcode.com/problems/binary-search/',
-      reason: 'Foundational search on sorted arrays.'
-    },
-    {
-      title: 'Search in Rotated Sorted Array',
-      difficulty: 'Medium',
-      pattern: 'Rotated Boundary Check',
-      url: 'https://leetcode.com/problems/search-in-rotated-sorted-array/',
-      reason: 'Determining sorted halves under rotation.'
-    },
-    {
-      title: 'Find Minimum in Rotated Sorted Array',
-      difficulty: 'Medium',
-      pattern: 'Pivot Detection',
-      url: 'https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/',
-      reason: 'Edge condition convergence without target values.'
+      reason: 'Standard tree traversal for structural depth.'
     }
   ],
   'arrays': [
-    {
-      title: 'Two Sum',
-      difficulty: 'Easy',
-      pattern: 'Hash Map Complement',
-      url: 'https://leetcode.com/problems/two-sum/',
-      reason: 'Classic complement lookup in linear time.'
-    },
     {
       title: 'Best Time to Buy and Sell Stock',
       difficulty: 'Easy',
@@ -307,133 +259,125 @@ export function PracticePage() {
   const targetScore = 75;
   const gapPoints = Math.max(0, targetScore - dsaScore);
 
-  const difficultyStyles = {
-    Easy: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/40',
-    Medium: 'text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40',
-    Hard: 'text-rose-700 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/40'
-  };
-
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* Back Link */}
       <div className="flex items-center justify-between">
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#74766F] hover:text-[#20211E] transition"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Overview</span>
         </Link>
         <Link
           to="/dsa-tracker"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#315B45] hover:underline"
         >
           <span>Open DSA Log Tracker →</span>
         </Link>
       </div>
 
       {/* Header & Why Recommended Card */}
-      <Card className="p-6 sm:p-8 space-y-6 border-amber-200/70 bg-gradient-to-br from-amber-50/50 via-white to-amber-50/30 dark:from-amber-950/20 dark:via-slate-900 dark:to-amber-950/10 dark:border-amber-900/40 shadow-xs">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+      <Card className="p-5 sm:p-6 space-y-4">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FBF4E6] border border-[#F3E3C4] text-[#B9822E] text-[0.68rem] font-bold uppercase tracking-wider">
             <AlertTriangle className="h-3.5 w-3.5" />
             <span>Target Preparation Priority</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#20211E] tracking-tight">
             Practice {topicTitle}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
-            <strong className="text-slate-900 dark:text-slate-100">{topicTitle}</strong> is currently identified as one of your biggest preparation gaps. Mastering these core interview patterns directly impacts your performance in algorithmic screening rounds.
+          <p className="text-xs text-[#5F625C] leading-relaxed max-w-3xl">
+            <strong className="text-[#20211E]">{topicTitle}</strong> is currently identified as one of your biggest preparation gaps. Mastering these core interview patterns directly impacts your performance in algorithmic screening rounds.
           </p>
         </div>
 
         {/* Progress Metrics Grid */}
-        <div className="pt-4 border-t border-amber-200/50 dark:border-amber-900/40">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+        <div className="pt-3 border-t border-[#E3DED3]">
+          <h2 className="text-[0.68rem] font-bold uppercase tracking-wider text-[#74766F] mb-2.5">
             Your Progress & Benchmark
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3 rounded-lg bg-[#FFFDF8] border border-[#E3DED3] space-y-0.5">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-wider text-[#74766F]">
                 Current DSA Score
               </span>
-              <p className="text-2xl font-extrabold font-mono text-slate-900 dark:text-slate-100">
+              <p className="text-xl font-bold font-mono text-[#20211E]">
                 {dsaScore}%
               </p>
-              <p className="text-[0.7rem] text-slate-500">Based on verified practice telemetry</p>
+              <p className="text-[0.68rem] text-[#74766F]">Based on verified telemetry</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="p-3 rounded-lg bg-[#FFFDF8] border border-[#E3DED3] space-y-0.5">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-wider text-[#74766F]">
                 Target Benchmark
               </span>
-              <p className="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+              <p className="text-xl font-bold font-mono text-[#315B45]">
                 {targetScore}%
               </p>
-              <p className="text-[0.7rem] text-slate-500">Target SDE screening threshold</p>
+              <p className="text-[0.68rem] text-[#74766F]">Target SDE screening threshold</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
-              <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-slate-400">
+            <div className="p-3 rounded-lg bg-[#FFFDF8] border border-[#E3DED3] space-y-0.5">
+              <span className="text-[0.68rem] font-semibold uppercase tracking-wider text-[#74766F]">
                 Preparation Gap
               </span>
-              <p className="text-2xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
+              <p className="text-xl font-bold font-mono text-[#C9683A]">
                 {gapPoints} pts
               </p>
-              <p className="text-[0.7rem] text-slate-500">To reach target interview readiness</p>
+              <p className="text-[0.68rem] text-[#74766F]">To reach target readiness</p>
             </div>
           </div>
         </div>
       </Card>
 
       {/* Recommended Problems Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between pb-1 border-b border-[#E3DED3]">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <Target className="h-4 w-4 text-[#315B45]" />
+            <h2 className="text-sm sm:text-base font-bold text-[#20211E]">
               Recommended Problems ({problemsList.length})
             </h2>
           </div>
-          <span className="text-xs text-slate-500">
-            Ordered from foundational to core interview patterns
+          <span className="text-xs text-[#74766F]">
+            Ordered from foundational to core patterns
           </span>
         </div>
 
-        <div className="space-y-3.5">
+        <div className="space-y-2.5">
           {problemsList.map((prob, idx) => {
             const isSolved = solvedSet.has(prob.title.trim().toLowerCase());
             return (
               <Card
                 key={prob.title}
-                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition"
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#D7D0C4] transition"
               >
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="text-xs font-mono font-bold text-slate-400">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold text-[#74766F]">
                       #{idx + 1}
                     </span>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
                       {prob.title}
                     </h3>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[0.68rem] font-bold border ${difficultyStyles[prob.difficulty] || difficultyStyles.Medium}`}
-                    >
+                    <Badge variant={prob.difficulty === 'Easy' ? 'green' : prob.difficulty === 'Hard' ? 'red' : 'orange'} size="sm">
                       {prob.difficulty}
-                    </span>
-                    <Badge variant="blue" size="sm">
+                    </Badge>
+                    <Badge variant="neutral" size="sm">
                       {prob.pattern}
                     </Badge>
                     {isSolved && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.68rem] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.68rem] font-bold bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]">
                         <CheckCircle2 className="h-3 w-3" />
                         <span>Solved</span>
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Why: </span>
+                  <p className="text-xs text-[#5F625C] leading-relaxed">
+                    <span className="font-semibold text-[#20211E]">Why: </span>
                     {prob.reason}
                   </p>
                 </div>
@@ -446,10 +390,10 @@ export function PracticePage() {
                   >
                     <Button
                       size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5"
+                      className="inline-flex items-center gap-1.5"
                     >
                       <span>{isSolved ? 'Re-solve on LeetCode' : 'Solve on LeetCode'}</span>
-                      <ExternalLink className="h-3.5 w-3.5" />
+                      <ExternalLink className="h-3 w-3" />
                     </Button>
                   </a>
                 </div>

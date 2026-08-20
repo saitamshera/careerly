@@ -75,11 +75,23 @@ const deleteInterview = asyncHandler(async (request, response) => {
 });
 
 const chatMentor = asyncHandler(async (request, response) => {
+  let context = {};
+  if (typeof request.body.context === 'string') {
+    try {
+      context = JSON.parse(request.body.context);
+    } catch {
+      context = {};
+    }
+  } else if (request.body.context && typeof request.body.context === 'object') {
+    context = request.body.context;
+  }
+
   const result = await createChatMessage({
     userId: request.user.id,
     conversationId: request.body.conversationId,
     prompt: request.body.prompt,
-    context: request.body.context || {}
+    context,
+    file: request.file || null
   });
 
   response.status(200).json(new ApiResponse(200, result, 'Chat response generated'));
@@ -152,6 +164,12 @@ const deleteConversation = asyncHandler(async (request, response) => {
   response.status(200).json(new ApiResponse(200, null, 'Conversation deleted'));
 });
 
+const renameConversation = asyncHandler(async (request, response) => {
+  const { renameUserConversation } = require('../services/chatMentor.service');
+  const result = await renameUserConversation(request.params.id, request.user.id, request.body.title);
+  response.status(200).json(new ApiResponse(200, result, 'Conversation renamed successfully'));
+});
+
 const shareConversation = asyncHandler(async (request, response) => {
   const result = await shareUserConversation(request.params.id, request.user.id);
   response.status(201).json(new ApiResponse(201, result, 'Conversation shared successfully'));
@@ -179,6 +197,7 @@ module.exports = {
   getChatHistory,
   getConversation,
   deleteConversation,
+  renameConversation,
   shareConversation,
   getSharedConversationHandler,
   deleteInterview

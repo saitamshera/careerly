@@ -10,19 +10,19 @@ export function EmptyState({
   className = ''
 }) {
   return (
-    <div className={`p-8 sm:p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-4 ${className}`}>
+    <div className={`p-8 sm:p-10 text-center rounded-xl border border-dashed border-[#E3DED3] bg-[#FFFDF8] space-y-3 ${className}`}>
       {Icon && (
-        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 mx-auto flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm">
-          <Icon className="w-6 h-6" />
+        <div className="w-10 h-10 rounded-lg bg-[#E8F0EA] border border-[#D1E0D7] mx-auto flex items-center justify-center text-[#315B45] shadow-2xs">
+          <Icon className="w-5 h-5" />
         </div>
       )}
 
       <div className="max-w-sm mx-auto space-y-1">
-        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+        <h3 className="text-sm sm:text-base font-bold text-[#20211E]">
           {title}
         </h3>
         {description && (
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="text-xs text-[#5F625C] leading-relaxed">
             {description}
           </p>
         )}

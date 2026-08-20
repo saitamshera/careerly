@@ -12,17 +12,13 @@ import {
 import {
   BarChart3,
   TrendingUp,
-  Briefcase,
   Video,
-  FileCheck2,
   Clock,
-  CheckCircle2,
-  Code2
+  CheckCircle2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Card, CardHeader } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
-import { Badge } from '../components/ui/Badge';
 import { SectionHeader } from '../components/ui/SectionHeader';
 
 export function AnalyticsPage() {
@@ -59,7 +55,7 @@ export function AnalyticsPage() {
   const offerRate = total > 0 ? Math.round((offers / total) * 100) : 0;
 
   const chartData = [
-    { label: 'Applications', count: total },
+    { label: 'Applied', count: total },
     { label: 'Responses', count: responses },
     { label: 'Interviews', count: interviews },
     { label: 'Offers', count: offers },
@@ -89,13 +85,13 @@ export function AnalyticsPage() {
     responseCount > 0 ? (totalResponseTimeMs / (responseCount * 1000 * 60 * 60 * 24)).toFixed(1) : null;
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* 1. Header */}
       <SectionHeader
         eyebrow="CONVERSION & MOMENTUM ANALYTICS"
         title={
-          <span className="flex items-center gap-2.5">
-            <BarChart3 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-[#315B45] shrink-0" />
             <span>Placement Analytics</span>
           </span>
         }
@@ -103,7 +99,7 @@ export function AnalyticsPage() {
       />
 
       {/* 2. Key Metric Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Response Rate"
           value={`${responseRate}%`}
@@ -129,77 +125,78 @@ export function AnalyticsPage() {
         />
 
         <MetricCard
-          title="Avg Recruiter Turnaround"
+          title="Avg Turnaround"
           value={avgResponseTimeDays ? `${avgResponseTimeDays} Days` : 'N/A'}
-          subtitle="From application to response"
+          subtitle="From apply to response"
           icon={Clock}
           accent="orange"
         />
       </div>
 
       {/* 3. Funnel Chart & Telemetry Summary */}
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-        <Card className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+        <Card className="space-y-3 p-4">
           <CardHeader
             title="Application Conversion Funnel"
             subtitle="Drop-off analysis across application lifecycle stages."
           />
 
-          <div className="h-64 w-full pt-4">
+          <div className="h-60 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E3DED3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#74766F' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#74766F' }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#ffffff',
-                    borderColor: '#e2e8f0',
-                    borderRadius: '0.75rem',
-                    fontSize: '12px'
+                    backgroundColor: '#FFFDF8',
+                    borderColor: '#E3DED3',
+                    borderRadius: '0.5rem',
+                    fontSize: '12px',
+                    color: '#20211E'
                   }}
                 />
-                <Bar dataKey="count" fill="#16a34a" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="#315B45" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         {/* Preparation Score Benchmarks */}
-        <Card className="space-y-4">
+        <Card className="space-y-3 p-4">
           <CardHeader
             title="Readiness Breakdown"
             subtitle="Aggregated multi-dimensional index."
           />
 
-          <div className="space-y-3 text-xs">
+          <div className="space-y-3 text-xs pt-1">
             <div className="space-y-1">
               <div className="flex justify-between font-semibold">
-                <span className="text-slate-600 dark:text-slate-400">DSA Coverage</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">{data?.totalDsaSolved ?? 0} Solved</span>
+                <span className="text-[#5F625C]">DSA Coverage</span>
+                <span className="font-bold text-[#20211E]">{data?.totalDsaSolved ?? 0} Solved</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${Math.min(((data?.totalDsaSolved ?? 0) / 150) * 100, 100)}%` }} />
+              <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${Math.min(((data?.totalDsaSolved ?? 0) / 150) * 100, 100)}%` }} />
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between font-semibold">
-                <span className="text-slate-600 dark:text-slate-400">Resume ATS Alignment</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">{data?.resumeScore || 70}/100</span>
+                <span className="text-[#5F625C]">Resume ATS Alignment</span>
+                <span className="font-bold text-[#20211E]">{data?.resumeScore || 70}/100</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${data?.resumeScore || 70}%` }} />
+              <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${data?.resumeScore || 70}%` }} />
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between font-semibold">
-                <span className="text-slate-600 dark:text-slate-400">Readiness Tier</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{data?.readinessLevel || 'Developing'}</span>
+                <span className="text-[#5F625C]">Readiness Tier</span>
+                <span className="font-bold text-[#315B45]">{data?.readinessLevel || 'Developing'}</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                <div className="h-full bg-purple-600 rounded-full" style={{ width: `${data?.readinessScore || 73}%` }} />
+              <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${data?.readinessScore || 73}%` }} />
               </div>
             </div>
           </div>

@@ -11,16 +11,10 @@ import {
   X,
   RotateCcw,
   Target,
-  ChevronDown,
-  ChevronUp,
-  AlertCircle,
-  TrendingUp,
-  Check,
-  CircleDot
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Card, CardHeader } from '../components/ui/Card';
-import { MetricCard } from '../components/ui/MetricCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
@@ -56,7 +50,6 @@ export function ResumePage() {
 
   // Expandable UI state
   const [showJobDescription, setShowJobDescription] = useState(false);
-  const [showExtractedText, setShowExtractedText] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
   // View state
@@ -248,13 +241,13 @@ export function ResumePage() {
     file?.name || resumesQuery.data?.[0]?.originalName || 'Resume Document';
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* 1. Header */}
       <SectionHeader
         eyebrow="RECRUITER SCREENING & ATS OPTIMIZER"
         title={
-          <span className="flex items-center gap-2.5">
-            <FileCheck2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="flex items-center gap-2">
+            <FileCheck2 className="h-5 w-5 text-[#315B45] shrink-0" />
             <span>Resume Lab & ATS Scanner</span>
           </span>
         }
@@ -278,38 +271,37 @@ export function ResumePage() {
 
       {/* 2. Loading State */}
       {uploadMutation.isPending && (
-        <Card className="max-w-md mx-auto p-8 text-center space-y-6">
+        <Card className="max-w-md mx-auto p-6 text-center space-y-5">
           <div className="space-y-1">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center justify-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-600 animate-spin" />
+            <h2 className="text-sm sm:text-base font-bold text-[#20211E] flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#315B45] animate-spin" />
               <span>Analyzing Resume...</span>
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#5F625C]">
               Benchmarking keywords, qualifications, and role alignment
             </p>
           </div>
 
-          <div className="space-y-2.5 text-left pt-2">
+          <div className="space-y-2 text-left pt-1">
             {loadingSteps.map((step, idx) => {
               const isDone = idx < loadingStepIndex;
               const isCurrent = idx === loadingStepIndex;
               return (
                 <div
                   key={step}
-                  className={`flex items-center gap-3 p-3 rounded-xl border text-xs transition-all duration-300 ${
-                    isDone
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                      : isCurrent
-                      ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900 font-bold dark:bg-emerald-950/20 dark:text-emerald-200'
-                      : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60 dark:bg-slate-800/40 dark:border-slate-700'
-                  }`}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-xs transition-all ${isDone
+                    ? 'bg-[#E8F0EA] border-[#D1E0D7] text-[#315B45] font-semibold'
+                    : isCurrent
+                      ? 'bg-[#E8F0EA]/60 border-[#315B45] text-[#20211E] font-bold'
+                      : 'bg-[#F7F4ED] border-[#E3DED3] text-[#74766F]'
+                    }`}
                 >
                   {isDone ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-[#315B45] shrink-0" />
                   ) : isCurrent ? (
-                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+                    <RefreshCw className="w-4 h-4 text-[#315B45] animate-spin shrink-0" />
                   ) : (
-                    <div className="w-4 h-4 rounded-full border border-slate-300 shrink-0" />
+                    <div className="w-4 h-4 rounded-full border border-[#D7D0C4] shrink-0" />
                   )}
                   <span className="truncate">{step}</span>
                 </div>
@@ -321,15 +313,15 @@ export function ResumePage() {
 
       {/* 3. Error State */}
       {showFailedState && (
-        <Card className="max-w-md mx-auto p-8 text-center space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto dark:bg-rose-950/40 dark:text-rose-400">
-            <AlertCircle className="w-6 h-6" />
+        <Card className="max-w-md mx-auto p-6 text-center space-y-3.5">
+          <div className="w-10 h-10 rounded-lg bg-[#FDECEB] border border-[#F7CBC9] text-[#B83A35] flex items-center justify-center mx-auto">
+            <AlertCircle className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm sm:text-base font-bold text-[#20211E]">
               Unable to analyze resume
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-[#5F625C] leading-relaxed">
               {formError || 'We could not complete the analysis right now. Please try again.'}
             </p>
           </div>
@@ -349,7 +341,7 @@ export function ResumePage() {
 
       {/* 4. Upload / Workspace Form */}
       {!showResults && !uploadMutation.isPending && !showFailedState && (
-        <Card className="max-w-xl mx-auto p-6 sm:p-8 space-y-5">
+        <Card className="max-w-xl mx-auto p-6 space-y-4">
           <CardHeader
             title="Upload Document"
             subtitle="Upload your PDF or DOCX resume to start the screening analysis."
@@ -364,11 +356,10 @@ export function ResumePage() {
               onDragLeave={() => setIsDragOver(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`rounded-2xl border-2 border-dashed p-8 text-center transition-all cursor-pointer ${
-                isDragOver
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
-                  : 'border-slate-200 hover:border-emerald-400 bg-slate-50/50 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/40'
-              }`}
+              className={`rounded-xl border-2 border-dashed p-6 text-center transition-all cursor-pointer ${isDragOver
+                ? 'border-[#315B45] bg-[#E8F0EA]/40'
+                : 'border-[#E3DED3] hover:border-[#315B45] bg-[#F7F4ED]'
+                }`}
             >
               <input
                 ref={fileInputRef}
@@ -377,34 +368,34 @@ export function ResumePage() {
                 onChange={(e) => handleFileSelect(e.target.files?.[0])}
                 className="hidden"
               />
-              <div className="space-y-2.5">
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                  <UploadCloud className="w-6 h-6" />
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-lg bg-[#E8F0EA] border border-[#D1E0D7] text-[#315B45] flex items-center justify-center mx-auto">
+                  <UploadCloud className="w-5 h-5" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <div className="space-y-0.5">
+                  <p className="text-xs sm:text-sm font-bold text-[#20211E]">
                     Upload your resume
                   </p>
-                  <p className="text-xs text-slate-500">
-                    Drag & drop file here or <span className="text-emerald-600 font-semibold underline underline-offset-2">browse files</span>
+                  <p className="text-xs text-[#5F625C]">
+                    Drag & drop file here or <span className="text-[#315B45] font-semibold underline underline-offset-2">browse files</span>
                   </p>
                 </div>
-                <p className="text-[0.68rem] text-slate-400">
+                <p className="text-[0.68rem] text-[#74766F]">
                   Supported: PDF, DOCX • Maximum 5 MB
                 </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5" />
+            <div className="flex items-center justify-between p-3.5 rounded-lg bg-[#F7F4ED] border border-[#E3DED3]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-md bg-[#E8F0EA] border border-[#D1E0D7] text-[#315B45] flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs">
+                  <p className="text-xs font-bold text-[#20211E] truncate max-w-xs">
                     {file.name}
                   </p>
-                  <p className="text-[0.68rem] text-slate-400">
+                  <p className="text-[0.68rem] text-[#74766F]">
                     {file.name.endsWith('.pdf') ? 'PDF' : 'DOCX'} • {formatFileSize(file.size)}
                   </p>
                 </div>
@@ -421,7 +412,7 @@ export function ResumePage() {
                 <button
                   type="button"
                   onClick={handleRemoveFile}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                  className="p-1 rounded-md text-[#74766F] hover:text-[#B83A35] hover:bg-[#FDECEB] transition cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -431,15 +422,15 @@ export function ResumePage() {
 
           {/* Target Role Field */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-              Target Role <span className="text-slate-400 font-normal">(Optional)</span>
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
+              Target Role <span className="text-[#74766F] font-normal">(Optional)</span>
             </label>
             <input
               type="text"
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
               placeholder="e.g. Software Engineer, Backend Developer"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-2 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
             />
           </div>
 
@@ -448,7 +439,7 @@ export function ResumePage() {
             <button
               type="button"
               onClick={() => setShowJobDescription(!showJobDescription)}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#315B45] hover:underline cursor-pointer"
             >
               {showJobDescription ? '− Hide job description' : '+ Add job description for exact keyword matching'}
             </button>
@@ -459,14 +450,14 @@ export function ResumePage() {
                 value={targetJobDescription}
                 onChange={(e) => setTargetJobDescription(e.target.value)}
                 placeholder="Paste the target job description requirements..."
-                className="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="mt-2 w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] p-2.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               />
             )}
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1">
             <Button
-              size="lg"
+              size="md"
               className="w-full"
               icon={Sparkles}
               onClick={handleAnalyze}
@@ -479,36 +470,36 @@ export function ResumePage() {
 
       {/* 5. Scorecard & Results Dashboard */}
       {showResults && activeReport && (
-        <section className="space-y-6">
-          {/* Dedicated Job Match Analysis Card (Rendered ONLY when a Job Description was provided) */}
+        <section className="space-y-5">
+          {/* Dedicated Job Match Analysis Card (Rendered when a Job Description was provided) */}
           {(activeReport.targetJobDescription || typeof activeReport.jobMatchScore === 'number') && (
-            <Card className="p-6 sm:p-8 space-y-6 border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-emerald-200/60 dark:border-emerald-800/40">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
-                    <Target className="w-6 h-6" />
+            <Card className="p-5 space-y-4 border-[#D1E0D7] bg-[#FFFDF8]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E3DED3]">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#E8F0EA] border border-[#D1E0D7] text-[#315B45] flex items-center justify-center">
+                    <Target className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
                         Job Description Match Analysis
                       </h3>
                       <Badge variant="green" size="sm">
                         Role Targeted
                       </Badge>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-[#5F625C] mt-0.5">
                       Targeted evaluation against your customized job description requirements
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-start sm:self-auto bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                <div className="flex items-center gap-2 self-start sm:self-auto bg-[#F7F4ED] px-3 py-1.5 rounded-lg border border-[#E3DED3]">
                   <div className="text-right">
-                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400 block">
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#74766F] block">
                       Role Match Score
                     </span>
-                    <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xl font-bold font-mono text-[#315B45]">
                       {activeReport.jobMatchScore ?? activeReport.atsKeywordMatch ?? 0}%
                     </span>
                   </div>
@@ -516,81 +507,81 @@ export function ResumePage() {
               </div>
 
               {/* Matched vs Missing Skills Grid */}
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-3.5 sm:grid-cols-2">
                 {/* Matched Qualifications */}
-                <div className="p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 dark:bg-emerald-950/20 dark:border-emerald-800/50 space-y-3">
+                <div className="p-3.5 rounded-lg border border-[#D1E0D7] bg-[#E8F0EA]/40 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      Matched Job Qualifications ({activeReport.matchedKeywords?.length || 0})
+                    <span className="text-xs font-bold text-[#315B45] flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      Matched Qualifications ({activeReport.matchedKeywords?.length || 0})
                     </span>
                     <Badge variant="green" size="sm">Present</Badge>
                   </div>
 
                   {activeReport.matchedKeywords && activeReport.matchedKeywords.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
                       {activeReport.matchedKeywords.map((kw, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100/80 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700/60"
+                          className="px-2 py-0.5 rounded-md text-xs font-semibold bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]"
                         >
                           ✓ {kw}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic">No specific direct keywords matched yet.</p>
+                    <p className="text-xs text-[#74766F] italic">No direct keywords matched yet.</p>
                   )}
                 </div>
 
                 {/* Missing Job Requirements */}
-                <div className="p-4 rounded-xl border border-rose-200/80 bg-rose-50/40 dark:bg-rose-950/20 dark:border-rose-800/50 space-y-3">
+                <div className="p-3.5 rounded-lg border border-[#F0D0BF] bg-[#F7E7DD]/40 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                      Missing Job Requirements ({activeReport.missingSkills?.length || 0})
+                    <span className="text-xs font-bold text-[#C9683A] flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      Missing Requirements ({activeReport.missingSkills?.length || 0})
                     </span>
-                    <Badge variant="red" size="sm">Gaps</Badge>
+                    <Badge variant="orange" size="sm">Gaps</Badge>
                   </div>
 
                   {activeReport.missingSkills && activeReport.missingSkills.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
                       {activeReport.missingSkills.map((sk, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-300/60 dark:border-rose-700/60"
+                          className="px-2 py-0.5 rounded-md text-xs font-semibold bg-[#F7E7DD] text-[#C9683A] border border-[#F0D0BF]"
                         >
                           ✕ {sk}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic">All key job requirements found in resume.</p>
+                    <p className="text-xs text-[#74766F] italic">All key job requirements found in resume.</p>
                   )}
                 </div>
               </div>
 
               {/* Top 3 Gaps & Fast Recommendations */}
               {activeReport.topGaps && activeReport.topGaps.length > 0 && (
-                <div className="space-y-3 pt-2">
-                  <span className="text-[0.68rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                    Top 3 High-Impact Fixes to Qualify for This Role:
+                <div className="space-y-2 pt-1">
+                  <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#74766F] block">
+                    Top High-Impact Fixes to Qualify:
                   </span>
-                  <div className="grid gap-2.5 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-3">
                     {activeReport.topGaps.map((item, gIdx) => (
                       <div
                         key={gIdx}
-                        className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900 space-y-1.5 shadow-xs"
+                        className="p-3 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] space-y-1"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-[0.65rem] font-bold text-emerald-800 dark:text-emerald-300 shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#E8F0EA] text-[0.65rem] font-bold text-[#315B45] shrink-0">
                             {gIdx + 1}
                           </span>
-                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                          <p className="text-xs font-bold text-[#20211E] truncate">
                             {item.gap}
                           </p>
                         </div>
-                        <p className="text-[0.72rem] text-slate-600 dark:text-slate-400 leading-relaxed">
+                        <p className="text-[0.7rem] text-[#5F625C] leading-relaxed">
                           {item.recommendation}
                         </p>
                       </div>
@@ -602,15 +593,15 @@ export function ResumePage() {
           )}
 
           {/* Main Scorecard Banner */}
-          <Card className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-5">
-                <div className="flex items-center justify-center w-24 h-24 rounded-full border-4 border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-inner">
+          <Card className="p-5 space-y-5">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-5 pb-4 border-b border-[#E3DED3]">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full border-2 border-[#315B45]/40 bg-[#E8F0EA]">
                   <div className="text-center">
-                    <span className="text-3xl font-black font-mono text-slate-900 dark:text-slate-100">
+                    <span className="text-2xl font-bold font-mono text-[#20211E]">
                       {activeReport.atsScore || 0}
                     </span>
-                    <span className="block text-[0.62rem] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <span className="block text-[0.62rem] font-bold uppercase tracking-wider text-[#315B45]">
                       /100
                     </span>
                   </div>
@@ -620,91 +611,91 @@ export function ResumePage() {
                   <Badge variant={scoreVerdict?.variant || 'green'} size="md">
                     {scoreVerdict?.title || 'Evaluated'}
                   </Badge>
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 max-w-md leading-relaxed">
+                  <p className="text-xs font-medium text-[#5F625C] max-w-md leading-relaxed">
                     {scoreVerdict?.description}
                   </p>
                 </div>
               </div>
 
               <div className="text-right">
-                <span className="text-[0.68rem] font-bold uppercase text-slate-400 block">Document</span>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs block mt-0.5">
+                <span className="text-[0.65rem] font-bold uppercase text-[#74766F] block">Document</span>
+                <span className="text-xs font-bold text-[#20211E] truncate max-w-xs block mt-0.5">
                   {latestResumeName}
                 </span>
               </div>
             </div>
 
             {/* Dimension Progress Bars */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 pt-2">
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400">Keyword Density</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{activeReport.categoryScores?.skills || 75}%</span>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 pt-1">
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[#5F625C] font-medium">Keyword Density</span>
+                  <span className="font-bold text-[#20211E]">{activeReport.categoryScores?.skills || 75}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${activeReport.categoryScores?.skills || 75}%` }} />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400">Quantified Impact</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{activeReport.categoryScores?.impact || 70}%</span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${activeReport.categoryScores?.impact || 70}%` }} />
+                <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                  <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${activeReport.categoryScores?.skills || 75}%` }} />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400">Formatting & Layout</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{activeReport.categoryScores?.formatting || 85}%</span>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[#5F625C] font-medium">Quantified Impact</span>
+                  <span className="font-bold text-[#20211E]">{activeReport.categoryScores?.impact || 70}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-purple-600 rounded-full" style={{ width: `${activeReport.categoryScores?.formatting || 85}%` }} />
+                <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                  <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${activeReport.categoryScores?.impact || 70}%` }} />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-slate-600 dark:text-slate-400">Experience Match</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{activeReport.categoryScores?.experience || 80}%</span>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[#5F625C] font-medium">Formatting & Layout</span>
+                  <span className="font-bold text-[#20211E]">{activeReport.categoryScores?.formatting || 85}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${activeReport.categoryScores?.experience || 80}%` }} />
+                <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                  <div className="h-full bg-[#315B45] rounded-full" style={{ width: `${activeReport.categoryScores?.formatting || 85}%` }} />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-[#5F625C] font-medium">Experience Match</span>
+                  <span className="font-bold text-[#20211E]">{activeReport.categoryScores?.experience || 80}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
+                  <div className="h-full bg-[#B9822E] rounded-full" style={{ width: `${activeReport.categoryScores?.experience || 80}%` }} />
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Strengths & Weaknesses Grid */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Card className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="space-y-3 p-4">
               <CardHeader
                 title="Resume Strengths"
                 action={<Badge variant="green">Verified</Badge>}
               />
-              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+              <ul className="space-y-1.5 text-xs text-[#20211E]">
                 {(activeReport.strengths || []).map((s, idx) => (
-                  <li key={idx} className="flex items-start gap-2 p-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/40">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-                    <span>{s}</span>
+                  <li key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-[#E8F0EA]/50 border border-[#D1E0D7]">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#315B45] mt-0.5 shrink-0" />
+                    <span className="leading-relaxed">{s}</span>
                   </li>
                 ))}
               </ul>
             </Card>
 
-            <Card className="space-y-3">
+            <Card className="space-y-3 p-4">
               <CardHeader
                 title="Missing Keywords & Gaps"
                 action={<Badge variant="orange">High Leverage</Badge>}
               />
-              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+              <ul className="space-y-1.5 text-xs text-[#20211E]">
                 {(activeReport.missingKeywords || activeReport.weaknesses || []).map((w, idx) => (
-                  <li key={idx} className="flex items-start gap-2 p-2 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-800/40">
-                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                    <span>{w}</span>
+                  <li key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-[#F7E7DD]/50 border border-[#F0D0BF]">
+                    <AlertTriangle className="h-3.5 w-3.5 text-[#C9683A] mt-0.5 shrink-0" />
+                    <span className="leading-relaxed">{w}</span>
                   </li>
                 ))}
               </ul>
@@ -713,7 +704,7 @@ export function ResumePage() {
 
           {/* Recommendations List */}
           {activeReport.recommendations && activeReport.recommendations.length > 0 && (
-            <Card className="space-y-3">
+            <Card className="space-y-3 p-4">
               <CardHeader
                 title="Actionable Bullet Rewrites & Recommendations"
                 subtitle="High-impact phrasing to increase keyword match rate."
@@ -722,13 +713,13 @@ export function ResumePage() {
                 {activeReport.recommendations.map((rec, rIdx) => (
                   <div
                     key={rIdx}
-                    className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 text-xs space-y-1"
+                    className="p-3 rounded-lg border border-[#E3DED3] bg-[#F7F4ED] text-xs space-y-1"
                   >
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="font-semibold text-[#20211E]">
                       {typeof rec === 'string' ? rec : rec.suggestion || rec.title}
                     </p>
                     {rec.example && (
-                      <p className="text-[0.7rem] font-mono text-emerald-700 dark:text-emerald-400">
+                      <p className="text-[0.7rem] font-mono text-[#315B45] bg-[#E8F0EA] p-1.5 rounded border border-[#D1E0D7]">
                         "{rec.example}"
                       </p>
                     )}

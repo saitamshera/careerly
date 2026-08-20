@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle2, Circle, Lock } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Card } from '../ui/Card';
 
@@ -16,22 +15,22 @@ export function PlacementJourneyStages({
   ];
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between pb-2">
+    <section className="space-y-3">
+      <div className="flex items-center justify-between pb-1">
         <div>
-          <span className="text-[0.68rem] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#315B45] block">
             Progression Architecture
           </span>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="text-sm sm:text-base font-bold text-[#20211E]">
             Placement Milestones
           </h2>
         </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline-block">
+        <span className="text-xs text-[#74766F] hidden sm:inline-block">
           Stages unlock as exit criteria are fulfilled.
         </span>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         {stageEntries.map(({ key, label, title, stageData }) => {
           const isSelected = selectedStageTab === key;
           const isCompleted = stageData.status === 'completed';
@@ -42,39 +41,38 @@ export function PlacementJourneyStages({
             <Card
               key={key}
               onClick={() => setSelectedStageTab(key)}
-              className={`p-5 transition cursor-pointer flex flex-col justify-between space-y-4 ${
-                isSelected
-                  ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md bg-emerald-50/20 dark:bg-emerald-950/20'
-                  : 'hover:border-slate-300 dark:hover:border-slate-700'
-              }`}
+              className={`p-4 transition cursor-pointer flex flex-col justify-between space-y-3 ${isSelected
+                ? 'border-[#315B45] ring-1 ring-[#315B45]/30 bg-[#E8F0EA]/20'
+                : 'hover:border-[#D7D0C4]'
+                }`}
             >
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.65rem] font-mono font-bold tracking-wider text-slate-400">
+                  <span className="text-[0.65rem] font-mono font-bold tracking-wider text-[#74766F]">
                     {label}
                   </span>
                   <Badge variant={isCompleted ? 'green' : isActive ? 'green' : isLocked ? 'neutral' : 'orange'}>
                     {isCompleted ? 'Completed ✓' : isActive ? 'Active Stage' : isLocked ? 'Locked 🔒' : 'In Progress'}
                   </Badge>
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-xs sm:text-sm font-bold text-[#20211E]">
                   {title}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-[#5F625C] leading-relaxed">
                   {stageData.tagline}
                 </p>
               </div>
 
-              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="space-y-1.5 pt-2.5 border-t border-[#E3DED3]">
                 <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-500">Stage Progress</span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-bold font-mono">
+                  <span className="text-[#5F625C]">Stage Progress</span>
+                  <span className="text-[#315B45] font-bold font-mono">
                     {Math.round(stageData.progress)}%
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div className="h-2 w-full rounded-full bg-[#F7F4ED] border border-[#E3DED3] overflow-hidden">
                   <div
-                    className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                    className="h-full bg-[#315B45] rounded-full transition-all duration-300"
                     style={{ width: `${Math.round(stageData.progress)}%` }}
                   />
                 </div>

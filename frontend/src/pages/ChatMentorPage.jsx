@@ -2,53 +2,81 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
-  Sparkles,
   Send,
-  User,
-  RotateCcw,
-  History,
   Copy,
   Check,
   AlertCircle,
-  HelpCircle,
-  Zap,
-  GraduationCap,
   X,
-  ChevronRight,
-  MessageSquare,
-  Trash2,
-  Share2,
-  Link2,
-  ShieldCheck
+  ShieldCheck,
+  Paperclip,
+  FileText
 } from 'lucide-react';
 import { api } from '../services/api';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { ChatHistoryRail } from '../components/chat/ChatHistoryRail';
+import { ChatHistoryPanel } from '../components/chat/ChatHistoryPanel';
+import { RenameConversationModal } from '../components/chat/RenameConversationModal';
 
-const suggestedPrompts = [
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const starterPrompts = [
   {
-    title: 'Resume & ATS Optimization',
-    prompt: 'How should I structure my resume for a Full Stack Developer role to maximize ATS score?',
-    icon: Sparkles
+    label: 'Resume & ATS',
+    prompt: 'How should I structure my resume bullet points to maximize ATS score and recruiter impact?'
   },
   {
-    title: 'System Design Preparation',
-    prompt: 'What are the most commonly asked System Design interview questions for SDE-1 and SDE-2?',
-    icon: Zap
+    label: 'System Design',
+    prompt: 'What is the recommended framework for answering System Design interview questions for SDE-1 and SDE-2?'
   },
   {
-    title: 'Salary Negotiation',
-    prompt: 'How do I negotiate salary for an entry-level software offer without sounding aggressive?',
-    icon: MessageSquare
+    label: 'DSA Roadmap',
+    prompt: 'What is the best 30-day strategy to master Dynamic Programming, Trees, and Graph patterns?'
   },
   {
-    title: '30-Day DSA Roadmap',
-    prompt: 'What is the best 30-day strategy to revise Dynamic Programming, Trees, and Graphs?',
-    icon: GraduationCap
+    label: 'Interview Prep',
+    prompt: 'How do I structure behavioral answers using the STAR method without sounding rehearsed?'
   }
 ];
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+function getFileTypeLabel(name = '') {
+  const ext = name.split('.').pop()?.toUpperCase();
+  return ext || 'FILE';
+}
+
+function renderInlineStyles(text) {
+  if (!text) return null;
+  const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+
+  return tokens.map((token, index) => {
+    if (token.startsWith('`') && token.endsWith('`')) {
+      return (
+        <code
+          key={index}
+          className="rounded px-1.5 py-0.5 text-[0.85rem] font-mono text-[#315B45] bg-[#E8F0EA] border border-[#D1E0D7]"
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    if (token.startsWith('**') && token.endsWith('**')) {
+      return (
+        <strong key={index} className="font-semibold text-[#20211E]">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    }
+    return token;
+  });
+}
 
 function FormattedMessage({ content }) {
   const elements = useMemo(() => {
@@ -65,14 +93,14 @@ function FormattedMessage({ content }) {
         return (
           <div
             key={partIndex}
-            className="my-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 text-slate-100 text-xs font-mono"
+            className="my-3.5 rounded-lg overflow-hidden border border-[#E5E0D6] bg-[#20211E] text-[#FFFDF8] text-[13px] sm:text-[14px] font-mono"
           >
             {language && (
-              <div className="bg-slate-800 px-3 py-1.5 text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-700">
+              <div className="bg-[#181917] px-3.5 py-1.5 text-[0.7rem] text-[#85867E] font-bold uppercase tracking-wider border-b border-[#333530]">
                 {language}
               </div>
             )}
-            <pre className="p-3 overflow-x-auto leading-relaxed">
+            <pre className="p-3.5 overflow-x-auto leading-relaxed">
               <code>{code}</code>
             </pre>
           </div>
@@ -82,7 +110,7 @@ function FormattedMessage({ content }) {
       const paragraphs = part.split(/\n\s*\n/);
 
       return (
-        <div key={partIndex} className="space-y-3">
+        <div key={partIndex} className="space-y-4">
           {paragraphs.map((para, pIndex) => {
             const trimmed = para.trim();
             if (!trimmed) return null;
@@ -93,12 +121,12 @@ function FormattedMessage({ content }) {
 
             if (isBulletList) {
               return (
-                <ul key={pIndex} className="space-y-1.5 pl-1 my-2">
+                <ul key={pIndex} className="space-y-2 pl-1 my-2.5">
                   {lines.map((line, lIndex) => {
                     const itemText = line.replace(/^[-*•]\s+/, '');
                     return (
-                      <li key={lIndex} className="flex items-start gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                      <li key={lIndex} className="flex items-start gap-2.5 leading-[1.6]">
+                        <span className="text-[#315B45] font-bold shrink-0 mt-1">•</span>
                         <span className="flex-1">{renderInlineStyles(itemText)}</span>
                       </li>
                     );
@@ -109,17 +137,12 @@ function FormattedMessage({ content }) {
 
             if (isNumberedList) {
               return (
-                <ol key={pIndex} className="space-y-2 pl-1 my-2">
+                <ol key={pIndex} className="space-y-2 pl-1 my-2.5 list-decimal list-inside">
                   {lines.map((line, lIndex) => {
-                    const match = line.match(/^(\d+)\.\s+(.*)/);
-                    const num = match ? match[1] : `${lIndex + 1}`;
-                    const itemText = match ? match[2] : line;
+                    const itemText = line.replace(/^\d+\.\s+/, '');
                     return (
-                      <li key={lIndex} className="flex items-start gap-2.5">
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-[0.65rem] font-bold text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5">
-                          {num}
-                        </span>
-                        <span className="flex-1">{renderInlineStyles(itemText)}</span>
+                      <li key={lIndex} className="leading-[1.6]">
+                        <span>{renderInlineStyles(itemText)}</span>
                       </li>
                     );
                   })}
@@ -129,24 +152,24 @@ function FormattedMessage({ content }) {
 
             if (trimmed.startsWith('### ')) {
               return (
-                <h4 key={pIndex} className="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">
+                <h4 key={pIndex} className="text-[17px] font-semibold text-[#20211E] mt-4 mb-2 leading-snug">
                   {renderInlineStyles(trimmed.slice(4))}
                 </h4>
               );
             }
             if (trimmed.startsWith('## ')) {
               return (
-                <h3 key={pIndex} className="text-base font-bold text-slate-900 dark:text-white mt-3.5 mb-1.5">
+                <h3 key={pIndex} className="text-[18px] font-semibold text-[#20211E] mt-5 mb-2 leading-snug">
                   {renderInlineStyles(trimmed.slice(3))}
                 </h3>
               );
             }
 
             return (
-              <p key={pIndex} className="leading-relaxed">
-                {lines.map((l, lIndex) => (
+              <p key={pIndex} className="leading-[1.65]">
+                {lines.map((line, lIndex) => (
                   <span key={lIndex}>
-                    {renderInlineStyles(l)}
+                    {renderInlineStyles(line)}
                     {lIndex < lines.length - 1 && <br />}
                   </span>
                 ))}
@@ -158,48 +181,33 @@ function FormattedMessage({ content }) {
     });
   }, [content]);
 
-  return <div className="text-xs leading-relaxed space-y-2">{elements}</div>;
-}
-
-function renderInlineStyles(text) {
-  if (!text) return null;
-  const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
-
-  return tokens.map((token, index) => {
-    if (token.startsWith('`') && token.endsWith('`')) {
-      return (
-        <code
-          key={index}
-          className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[0.7rem] font-mono text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-700"
-        >
-          {token.slice(1, -1)}
-        </code>
-      );
-    }
-    if (token.startsWith('**') && token.endsWith('**')) {
-      return (
-        <strong key={index} className="font-bold text-slate-900 dark:text-white">
-          {token.slice(2, -2)}
-        </strong>
-      );
-    }
-    return token;
-  });
+  return <div className="text-[15px] sm:text-[16px] leading-[1.65] font-normal tracking-normal text-[#20211E] space-y-4">{elements}</div>;
 }
 
 export function ChatMentorPage() {
   const [promptText, setPromptText] = useState('');
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
   const [messages, setMessages] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [activeConversationTitle, setActiveConversationTitle] = useState('');
   const [copiedId, setCopiedId] = useState(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Drawer state: default closed so the chat has full horizontal space
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [focusSearchTrigger, setFocusSearchTrigger] = useState(0);
+
+  // Modals state
   const [deletingConv, setDeletingConv] = useState(null);
+  const [renamingConv, setRenamingConv] = useState(null);
   const [sharingConv, setSharingConv] = useState(null);
   const [shareLink, setShareLink] = useState('');
   const [isShareCopied, setIsShareCopied] = useState(false);
+
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
   const scrollToBottom = (behavior = 'smooth') => {
@@ -211,13 +219,12 @@ export function ChatMentorPage() {
   }, [messages]);
 
   // Fetch saved conversations
-  const { data: conversationsData, isLoading: isHistoryLoading } = useQuery({
+  const { data: conversationsData = [], isLoading: isHistoryLoading } = useQuery({
     queryKey: ['chat-conversations'],
     queryFn: async () => {
       const response = await api.get('/ai/chat/conversations');
       return response.data?.data || [];
-    },
-    enabled: isHistoryOpen
+    }
   });
 
   const deleteMutation = useMutation({
@@ -227,9 +234,23 @@ export function ChatMentorPage() {
     onSuccess: (_, convId) => {
       queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
       if (activeConversationId === convId) {
-        handleClearChat();
+        handleNewChat();
       }
       setDeletingConv(null);
+    }
+  });
+
+  const renameMutation = useMutation({
+    mutationFn: async ({ convId, title }) => {
+      const response = await api.patch(`/ai/chat/conversations/${convId}`, { title });
+      return response.data?.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (activeConversationId === variables.convId) {
+        setActiveConversationTitle(variables.title);
+      }
+      setRenamingConv(null);
     }
   });
 
@@ -245,17 +266,19 @@ export function ChatMentorPage() {
     }
   });
 
-  function handleOpenShare(event, conv) {
-    event.stopPropagation();
+  function handleOpenShare(conv) {
     setSharingConv(conv);
     setShareLink('');
     setIsShareCopied(false);
     shareMutation.mutate(conv._id || conv.id);
   }
 
-  function handleOpenDelete(event, conv) {
-    event.stopPropagation();
+  function handleOpenDelete(conv) {
     setDeletingConv(conv);
+  }
+
+  function handleOpenRename(conv) {
+    setRenamingConv(conv);
   }
 
   function handleCopyShareLink() {
@@ -308,33 +331,105 @@ export function ChatMentorPage() {
     }
   });
 
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    setFileError('');
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError('File is too large. Maximum size is 5 MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const fileName = (file.name || '').toLowerCase();
+    const validExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+
+    const validMimes = [
+      'application/pdf',
+      'application/msword',
+      'application/doc',
+      'application/x-msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/octet-stream'
+    ];
+    const hasValidMime = validMimes.includes(file.type) || file.type.startsWith('text/');
+
+    if (!hasValidExt && !hasValidMime) {
+      setFileError('Unsupported file type. Please upload PDF, DOC, DOCX, or TXT.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setAttachedFile(file);
+  }
+
+  function handleRemoveAttachment() {
+    setAttachedFile(null);
+    setFileError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+
   function handleSendPrompt(textToSend) {
     const rawText = typeof textToSend === 'string' ? textToSend : promptText;
     const finalPrompt = (rawText || '').trim();
-    if (!finalPrompt || chatMutation.isPending) return;
 
+    if ((!finalPrompt && !attachedFile) || chatMutation.isPending) return;
+
+    const currentAttachment = attachedFile;
     const userMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: finalPrompt,
+      content: finalPrompt || (currentAttachment ? `Please review this attached document: ${currentAttachment.name}` : ''),
+      metadata: currentAttachment
+        ? {
+            attachment: {
+              name: currentAttachment.name,
+              size: currentAttachment.size,
+              mimeType: currentAttachment.type
+            }
+          }
+        : undefined,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setPromptText('');
+    setAttachedFile(null);
+    setFileError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
 
-    chatMutation.mutate({
-      conversationId: activeConversationId,
-      prompt: finalPrompt,
-      context: {
-        monthsLeft: 3,
-        hoursDaily: 4
+    if (currentAttachment) {
+      const formData = new FormData();
+      if (activeConversationId) {
+        formData.append('conversationId', activeConversationId);
       }
-    });
+      if (finalPrompt) {
+        formData.append('prompt', finalPrompt);
+      }
+      formData.append('file', currentAttachment);
+      formData.append('context', JSON.stringify({ monthsLeft: 3, hoursDaily: 4 }));
+      chatMutation.mutate(formData);
+    } else {
+      chatMutation.mutate({
+        conversationId: activeConversationId,
+        prompt: finalPrompt,
+        context: {
+          monthsLeft: 3,
+          hoursDaily: 4
+        }
+      });
+    }
   }
 
   function handleKeyDown(event) {
@@ -349,7 +444,7 @@ export function ChatMentorPage() {
     const val = event.target.value;
     setPromptText(val);
     event.target.style.height = 'auto';
-    event.target.style.height = `${Math.min(event.target.scrollHeight, 160)}px`;
+    event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
   }
 
   function handleCopy(id, text) {
@@ -358,11 +453,18 @@ export function ChatMentorPage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  function handleClearChat() {
+  function handleNewChat() {
     setActiveConversationId(null);
     setActiveConversationTitle('');
     setMessages([]);
     setPromptText('');
+    setAttachedFile(null);
+    setFileError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    textareaRef.current?.focus();
+    setIsDrawerOpen(false);
   }
 
   async function handleLoadConversation(conv) {
@@ -375,6 +477,7 @@ export function ChatMentorPage() {
         id: m._id || m.id,
         role: m.role,
         content: m.content || (m.role === 'user' ? m.prompt : m.response),
+        metadata: m.metadata || {},
         timestamp: m.createdAt
           ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : ''
@@ -383,290 +486,320 @@ export function ChatMentorPage() {
       setActiveConversationId(convId);
       setActiveConversationTitle(data?.conversation?.title || conv.title || 'Conversation');
       setMessages(formatted);
-      setIsHistoryOpen(false);
+      setIsDrawerOpen(false);
     } catch (err) {
       console.error('Failed to load conversation:', err);
     }
   }
 
+  function handleOpenSearchFromRail() {
+    setIsDrawerOpen(true);
+    setFocusSearchTrigger(Date.now());
+  }
+
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto w-full p-4 sm:p-6 relative overflow-hidden animate-fadeIn">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-xs">
-            <Bot className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                Career Mentor
-              </h1>
-              <Badge variant="green" size="sm">
-                AI Mentor
-              </Badge>
-              {activeConversationTitle && messages.length > 0 && (
-                <span className="hidden sm:inline-flex text-xs text-slate-500 font-semibold truncate max-w-[200px]">
-                  • {activeConversationTitle}
-                </span>
-              )}
+    <main className="flex-1 flex h-full min-h-0 overflow-hidden bg-[#F8F6F0] text-[#20211E] relative">
+      {/* Primary Full-Height Chat Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 h-full min-h-0 overflow-hidden">
+        {/* Compact Header */}
+        <header className="shrink-0 border-b border-[#E5E0D6] px-4 sm:px-8 py-2.5 bg-[#F8F6F0] flex items-center justify-between z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-7 w-7 rounded-md bg-[#E8F0EA] border border-[#D1E0D7] flex items-center justify-center text-[#315B45] shrink-0">
+              <Bot className="h-4 w-4" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Placement preparation strategy, resume bullet refinement, and negotiation drills.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={History}
-            onClick={() => setIsHistoryOpen(true)}
-          >
-            History
-          </Button>
-
-          {messages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={RotateCcw}
-              onClick={handleClearChat}
-            >
-              New Chat
-            </Button>
-          )}
-        </div>
-      </header>
-
-      {/* Main Chat Stream */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6 scroll-smooth pr-1">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center max-w-2xl mx-auto space-y-8 py-8">
-            <div className="text-center space-y-2">
-              <div className="h-14 w-14 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
-                <Bot className="h-7 w-7" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xs sm:text-sm font-bold text-[#20211E] tracking-tight shrink-0">
+                  Career Mentor
+                </h1>
+                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[0.65rem] font-bold text-[#315B45] bg-[#E8F0EA] border border-[#D1E0D7] shrink-0">
+                  AI Mentor
+                </span>
+                {activeConversationTitle && messages.length > 0 && (
+                  <span className="hidden sm:inline-flex text-xs text-[#74756E] font-medium truncate max-w-[280px]">
+                    • {activeConversationTitle}
+                  </span>
+                )}
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                How can I guide your preparation today?
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                Ask about behavioral STAR structures, System Design interview frameworks, DSA milestones, or offer negotiations.
+              <p className="text-[0.68rem] text-[#6F7068] hidden md:block truncate">
+                Strategy, resume bullets, document reviews, system design, and behavioral guidance.
               </p>
             </div>
+          </div>
+        </header>
 
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-wider text-slate-400 px-1">
-                <HelpCircle className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Suggested Starter Questions</span>
+        {/* Scrollable Conversation Area (Consumes all flexible height) */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 py-4 scroll-smooth flex flex-col">
+          {messages.length === 0 ? (
+            /* Compact Centered Empty State */
+            <div className="my-auto flex flex-col items-center justify-center max-w-md mx-auto text-center py-4 space-y-4">
+              <div className="h-10 w-10 rounded-xl bg-[#E8F0EA] border border-[#D1E0D7] flex items-center justify-center text-[#315B45] shadow-2xs">
+                <Bot className="h-5 w-5" />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {suggestedPrompts.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <Card
-                      key={index}
-                      hover
-                      padding="sm"
-                      onClick={() => handleSendPrompt(item.prompt)}
-                      className="group flex flex-col text-left cursor-pointer space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[0.7rem] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                          {item.title}
-                        </span>
-                        <Icon className="h-3.5 w-3.5 text-slate-400 group-hover:text-emerald-600 transition" />
-                      </div>
-                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                        {item.prompt}
-                      </p>
-                    </Card>
-                  );
-                })}
+
+              <div className="space-y-1">
+                <h2 className="text-base sm:text-lg font-bold text-[#20211E] tracking-tight">
+                  How can I help today?
+                </h2>
+                <p className="text-xs text-[#6F7068] leading-relaxed max-w-sm">
+                  Ask about resumes, DSA, interviews, system design, or career preparation.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                {starterPrompts.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendPrompt(item.prompt)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg border border-[#E5E0D6] bg-[#FFFDF8] hover:border-[#315B45] hover:bg-[#E8F0EA] text-xs font-semibold text-[#20211E] transition cursor-pointer shadow-2xs"
+                  >
+                    <span>{item.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role === 'assistant' && (
-                  <div
-                    className={`h-7 w-7 rounded-lg shrink-0 flex items-center justify-center shadow-xs ${
-                      msg.isError
-                        ? 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400'
-                        : 'bg-emerald-600 text-white'
-                    }`}
-                  >
-                    {msg.isError ? <AlertCircle className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-                  </div>
-                )}
-
+          ) : (
+            /* Active Conversation Messages (Top-aligned, natural flow) */
+            <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full space-y-5 pb-2">
+              {messages.map((msg) => (
                 <div
-                  className={`group relative max-w-[88%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-2xs ${
-                    msg.role === 'user'
-                      ? 'bg-emerald-600 text-white rounded-br-xs whitespace-pre-wrap'
-                      : msg.isError
-                      ? 'bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-200'
-                      : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-200'
-                  }`}
+                  key={msg.id}
+                  className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.role === 'assistant' && !msg.isError ? (
-                    <FormattedMessage content={msg.content} />
-                  ) : (
-                    <div>{msg.content}</div>
+                  {msg.role === 'assistant' && (
+                    <div
+                      className={`h-7 w-7 rounded-md shrink-0 flex items-center justify-center text-xs mt-1 ${
+                        msg.isError
+                          ? 'bg-[#FDECEB] text-[#B83A35] border border-[#F7CBC9]'
+                          : 'bg-[#E8F0EA] text-[#315B45] border border-[#D1E0D7]'
+                      }`}
+                    >
+                      {msg.isError ? <AlertCircle className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                    </div>
                   )}
 
                   <div
-                    className={`flex items-center justify-between gap-3 mt-2 pt-1.5 border-t text-[0.65rem] ${
+                    className={`group relative ${
                       msg.role === 'user'
-                        ? 'border-emerald-500/40 text-emerald-100'
-                        : 'border-slate-100 dark:border-slate-800 text-slate-400'
+                        ? 'max-w-[85%] sm:max-w-[75%] lg:max-w-[720px] bg-[#E8F0EA] border border-[#D6E3D9] text-[#20211E] rounded-xl px-4 sm:px-5 py-3.5 text-[15px] sm:text-[16px] leading-[1.55] shadow-2xs'
+                        : msg.isError
+                          ? 'max-w-[92%] sm:max-w-[85%] lg:max-w-[860px] bg-[#FDECEB] border border-[#F7CBC9] text-[#B83A35] rounded-xl px-4 sm:px-5 py-4 text-[15px] sm:text-[16px] leading-[1.65]'
+                          : 'max-w-[92%] sm:max-w-[85%] lg:max-w-[860px] bg-[#FFFDF8] border border-[#E5E0D6] text-[#20211E] rounded-xl px-4 sm:px-5 py-4 text-[15px] sm:text-[16px] leading-[1.65] shadow-2xs'
                     }`}
                   >
-                    <span>{msg.timestamp}</span>
-
-                    {msg.role === 'assistant' && !msg.isError && (
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(msg.id, msg.content)}
-                        className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
-                        title="Copy to clipboard"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check className="h-3 w-3 text-emerald-600" />
-                            <span className="text-emerald-600 font-semibold">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
+                    {msg.role === 'assistant' && !msg.isError ? (
+                      <FormattedMessage content={msg.content} />
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
                     )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
 
-      {/* Input Area */}
-      <div className="shrink-0 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSendPrompt();
-          }}
-          className="flex items-end gap-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-2 shadow-sm focus-within:border-emerald-500 transition"
-        >
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={promptText}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask mentor about preparation, interviews, or engineering strategies..."
-            className="flex-1 bg-transparent px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none resize-none max-h-32"
-          />
+                    {/* Attached Document Display Box */}
+                    {msg.metadata?.attachment && (
+                      <div className="mt-3 flex items-center gap-3 p-3 rounded-lg bg-[#FFFDF8] border border-[#D6E3D9] text-xs text-[#20211E]">
+                        <div className="flex h-8 w-8 items-center justify-center rounded bg-[#E8F0EA] text-[#315B45] shrink-0">
+                          <FileText className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[14px] sm:text-[15px] font-semibold text-[#20211E] truncate">
+                            {msg.metadata.attachment.name}
+                          </p>
+                          <p className="text-[12px] sm:text-[13px] text-[#74756E] font-mono">
+                            {getFileTypeLabel(msg.metadata.attachment.name)} · {formatFileSize(msg.metadata.attachment.size)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-          <Button
-            type="submit"
-            size="sm"
-            icon={Send}
-            isLoading={chatMutation.isPending}
-            disabled={!promptText.trim() || chatMutation.isPending}
-          >
-            Send
-          </Button>
-        </form>
-      </div>
-
-      {/* History Drawer Modal */}
-      {isHistoryOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div
-            className="fixed inset-0"
-            onClick={() => setIsHistoryOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 h-full p-5 space-y-4 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-10">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <History className="h-4 w-4 text-emerald-600" />
-                <span>Conversation History</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsHistoryOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {isHistoryLoading ? (
-                <p className="text-xs text-slate-400 text-center py-6">Loading conversations...</p>
-              ) : (conversationsData || []).length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">No previous conversations found.</p>
-              ) : (
-                (conversationsData || []).map((conv) => {
-                  const convId = conv._id || conv.id;
-                  const isActive = convId === activeConversationId;
-                  return (
+                    {/* Metadata Row */}
                     <div
-                      key={convId}
-                      onClick={() => handleLoadConversation(conv)}
-                      className={`group p-3 rounded-xl border transition text-xs flex items-center justify-between gap-2 cursor-pointer ${
-                        isActive
-                          ? 'border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20'
-                          : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      className={`flex items-center justify-between gap-3 mt-3 pt-2 border-t text-[12px] sm:text-[13px] ${
+                        msg.role === 'user' ? 'border-[#D6E3D9] text-[#74756E]' : 'border-[#E5E0D6] text-[#74756E]'
                       }`}
                     >
-                      <div className="flex-1 min-w-0 space-y-0.5">
-                        <p className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                          {conv.title || 'Conversation'}
-                        </p>
-                        <p className="text-[0.68rem] text-slate-400">
-                          {conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString() : 'Recent'}
-                        </p>
-                      </div>
+                      <span>{msg.timestamp}</span>
 
-                      <div className="flex items-center gap-1 shrink-0 opacity-80 sm:opacity-0 group-hover:opacity-100 transition">
+                      {msg.role === 'assistant' && !msg.isError && (
                         <button
                           type="button"
-                          title="Share conversation"
-                          onClick={(e) => handleOpenShare(e, conv)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="opacity-0 group-hover:opacity-100 transition flex items-center gap-1.5 text-[12px] sm:text-[13px] text-[#74756E] hover:text-[#315B45] cursor-pointer"
+                          title="Copy to clipboard"
                         >
-                          <Share2 className="h-3.5 w-3.5" />
+                          {copiedId === msg.id ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-[#315B45]" />
+                              <span className="text-[#315B45] font-semibold">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              <span>Copy</span>
+                            </>
+                          )}
                         </button>
-                        <button
-                          type="button"
-                          title="Delete conversation"
-                          onClick={(e) => handleOpenDelete(e, conv)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
             </div>
+          )}
+        </div>
+
+        {/* Anchored Bottom Chat Composer (20-24px bottom breathing room) */}
+        <div className="shrink-0 px-4 sm:px-8 pt-2.5 pb-5 sm:pb-6 bg-[#F8F6F0] border-t border-[#E5E0D6] z-10">
+          <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto w-full space-y-2">
+            {/* Error Notification */}
+            {fileError && (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[#FDECEB] border border-[#F7CBC9] text-[#B83A35] text-xs animate-fadeIn">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{fileError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFileError('')}
+                  className="text-[#B83A35] hover:opacity-70 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Compact Attachment Preview */}
+            {attachedFile && (
+              <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border border-[#E5E0D6] bg-[#FFFDF8] text-xs animate-fadeIn">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-[#315B45] shrink-0" />
+                  <div className="flex items-baseline gap-1.5 min-w-0 truncate">
+                    <span className="text-[14px] font-semibold text-[#20211E] truncate">{attachedFile.name}</span>
+                    <span className="text-[12px] text-[#74756E] shrink-0 font-mono">
+                      ({formatFileSize(attachedFile.size)})
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveAttachment}
+                  className="p-1 rounded-md text-[#74756E] hover:text-[#B83A35] hover:bg-[#FDECEB] transition cursor-pointer"
+                  title="Remove attachment"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+
+            {/* Composer Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendPrompt();
+              }}
+              className="flex items-end gap-2 bg-[#FFFDF8] rounded-xl border border-[#D8D2C6] p-2 focus-within:border-[#315B45] transition shadow-2xs"
+            >
+              {/* Attachment Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-lg text-[#74756E] hover:text-[#20211E] hover:bg-[#F5F2EA] transition cursor-pointer mb-0.5 shrink-0"
+                title="Attach document (PDF, DOC, DOCX, TXT - max 5MB)"
+              >
+                <Paperclip className="h-4.5 w-4.5" />
+              </button>
+
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={promptText}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  attachedFile
+                    ? `Ask mentor about ${attachedFile.name} (or leave blank to analyze)...`
+                    : 'Ask mentor about preparation, interviews, or engineering strategies...'
+                }
+                className="flex-1 bg-transparent px-2 py-1 text-[15px] sm:text-[16px] text-[#20211E] outline-none resize-none max-h-32 placeholder:text-[#777970] leading-relaxed"
+              />
+
+              <Button
+                type="submit"
+                size="md"
+                icon={Send}
+                isLoading={chatMutation.isPending}
+                disabled={(!promptText.trim() && !attachedFile) || chatMutation.isPending}
+                className="shrink-0"
+              >
+                Send
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Subtle Collapsed Rail on Right Edge */}
+      <ChatHistoryRail
+        onOpenSearch={handleOpenSearchFromRail}
+        onTogglePanel={() => setIsDrawerOpen((prev) => !prev)}
+        onNewChat={handleNewChat}
+      />
+
+      {/* Slide-over Right Chat History Drawer */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-40 flex justify-end animate-fadeIn">
+          {/* Subtle Transparent Backdrop */}
+          <div
+            className="fixed inset-0 bg-[#20211E]/20 backdrop-blur-2xs transition-opacity"
+            onClick={() => setIsDrawerOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-[320px] sm:w-[340px] h-full shadow-2xl z-10 animate-slideLeft">
+            <ChatHistoryPanel
+              conversations={conversationsData}
+              activeConversationId={activeConversationId}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onClearSearch={() => setSearchQuery('')}
+              focusSearchTrigger={focusSearchTrigger}
+              isLoading={isHistoryLoading}
+              onClose={() => setIsDrawerOpen(false)}
+              onNewChat={handleNewChat}
+              onSelectConversation={handleLoadConversation}
+              onRename={handleOpenRename}
+              onShare={handleOpenShare}
+              onDelete={handleOpenDelete}
+            />
           </div>
         </div>
       )}
+
+      {/* Rename Conversation Modal */}
+      <RenameConversationModal
+        isOpen={Boolean(renamingConv)}
+        conversation={renamingConv}
+        isLoading={renameMutation.isPending}
+        onClose={() => setRenamingConv(null)}
+        onSave={(title) => {
+          if (renamingConv) {
+            renameMutation.mutate({
+              convId: renamingConv._id || renamingConv.id,
+              title
+            });
+          }
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -675,9 +808,9 @@ export function ChatMentorPage() {
         title="Delete Conversation?"
         maxWidth="max-w-md"
       >
-        <div className="space-y-4 text-xs">
-          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-            Are you sure you want to delete <strong className="text-slate-900 dark:text-white">"{deletingConv?.title}"</strong>? This action is permanent and cannot be undone.
+        <div className="space-y-3 text-xs">
+          <p className="text-[#6F7068] leading-relaxed">
+            Are you sure you want to delete <strong className="text-[#20211E]">"{deletingConv?.title}"</strong>? This action is permanent.
           </p>
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button
@@ -710,21 +843,21 @@ export function ChatMentorPage() {
         title="Share Conversation"
         maxWidth="max-w-md"
       >
-        <div className="space-y-4 text-xs">
-          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200">
-            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="space-y-3 text-xs">
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#E8F0EA] border border-[#D1E0D7] text-[#315B45]">
+            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
             <div className="text-[0.72rem] leading-relaxed">
-              <strong>Privacy-Safe Snapshot:</strong> Personal identifying details (full name, email, phone number, college) are automatically redacted before creating this public link.
+              <strong>Privacy-Safe Snapshot:</strong> Personal identifying details are automatically redacted before creating this public link.
             </div>
           </div>
 
           {shareMutation.isPending ? (
-            <div className="py-6 text-center text-slate-400">
+            <div className="py-4 text-center text-[#74756E]">
               Generating secure snapshot...
             </div>
           ) : shareLink ? (
-            <div className="space-y-2">
-              <label className="block text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">
+            <div className="space-y-1.5">
+              <label className="block text-[0.68rem] font-bold uppercase tracking-wider text-[#74756E]">
                 Public Read-Only Link
               </label>
               <div className="flex items-center gap-2">
@@ -732,7 +865,7 @@ export function ChatMentorPage() {
                   type="text"
                   readOnly
                   value={shareLink}
-                  className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none select-all"
+                  className="flex-1 bg-[#FFFDF8] border border-[#E5E0D6] rounded-lg px-2.5 py-1.5 text-xs text-[#20211E] outline-none select-all"
                 />
                 <Button
                   size="sm"
@@ -744,12 +877,12 @@ export function ChatMentorPage() {
               </div>
             </div>
           ) : (
-            <div className="py-4 text-center text-rose-500">
+            <div className="py-3 text-center text-[#B83A35]">
               Failed to generate share link. Please try again.
             </div>
           )}
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-1">
             <Button
               variant="secondary"
               size="sm"
@@ -763,6 +896,6 @@ export function ChatMentorPage() {
           </div>
         </div>
       </Modal>
-    </div>
+    </main>
   );
 }

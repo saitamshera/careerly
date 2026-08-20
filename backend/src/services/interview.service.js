@@ -457,6 +457,7 @@ async function startInterview(arg1, arg2 = {}) {
     topic: topic || priorityFocus || targetRole,
     targetRole,
     targetCompany,
+    companyIntel,
     jobDescription,
     status: 'in-progress',
     questions: [openingQuestion],
@@ -575,7 +576,7 @@ async function submitInterviewAnswer({ userId, interviewId, answer }) {
   }
 
   const prevMemory = interview.structuredMemory || {};
-  const companyIntel = prevMemory.companyIntel || '';
+  const companyIntel = interview.companyIntel || prevMemory.companyIntel || '';
 
   // Process the turn through the conversational interviewer brain
   const turnResult = await processInterviewTurn({

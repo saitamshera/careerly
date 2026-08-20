@@ -21,7 +21,7 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
   const [stepLoading, setStepLoading] = useState(false);
   const [otpResent, setOtpResent] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit } = useForm({
     defaultValues: {
       name: '',
       email: '',
@@ -98,43 +98,29 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
                 setGoogleLoading(false);
               }
             } else if (response.error) {
-              setAuthError(`Google authentication cancelled or blocked: ${response.error}`);
+              setAuthError(`Google Sign-In error: ${response.error_description || response.error}`);
             }
+          },
+          onerror: (error) => {
+            setAuthError(`Google Sign-In failed: ${error.message || 'Popup closed or blocked'}`);
           }
         });
         client.requestCode();
-        return;
       } catch (err) {
-        console.warn('OAuth2 code client error, falling back to One Tap prompt:', err);
+        setAuthError(err.message || 'Failed to open Google Sign-In prompt');
       }
-    }
-
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          console.log('Google One Tap suppressed or dismissed');
-        }
-      });
     } else {
-      setAuthError('Connecting to Google Identity Services... Please try again in a moment.');
+      setAuthError('Google Sign-In SDK is loading. Please try again in a few seconds.');
     }
   }
 
-  async function handleFormSubmit(data) {
+  function handleFormSubmit(data) {
     setAuthError('');
-    try {
-      const sanitizedData = {
-        ...data,
-        email: String(data.email || '').trim().toLowerCase(),
-        name: String(data.name || '').trim()
-      };
-      await onSubmit(sanitizedData);
-    } catch (err) {
-      setAuthError(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
+    if (onSubmit) {
+      onSubmit(data);
     }
   }
 
-  // Step 1: Send OTP
   async function handleSendOtp(e) {
     e.preventDefault();
     if (!resetEmail) {
@@ -147,49 +133,49 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
       await forgotPassword({ email: resetEmail });
       setResetStep(2);
     } catch (err) {
-      setAuthError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
+      setAuthError(err.response?.data?.message || 'Failed to send OTP. Please check the email and try again.');
     } finally {
       setStepLoading(false);
     }
   }
 
-  // Step 2: Verify OTP
+  async function handleResendOtp() {
+    setStepLoading(true);
+    setAuthError('');
+    setOtpResent(false);
+    try {
+      await forgotPassword({ email: resetEmail });
+      setOtpResent(true);
+    } catch (err) {
+      setAuthError(err.response?.data?.message || 'Failed to resend OTP.');
+    } finally {
+      setStepLoading(false);
+    }
+  }
+
   async function handleVerifyOtp(e) {
     e.preventDefault();
-    const cleanOtp = resetOtp.trim();
-    if (!cleanOtp || cleanOtp.length !== 6) {
-      setAuthError('Please enter a valid 6-digit OTP code.');
+    if (!resetOtp || resetOtp.length < 6) {
+      setAuthError('Please enter the 6-digit OTP code sent to your email.');
       return;
     }
     setStepLoading(true);
     setAuthError('');
     try {
-      const data = await verifyResetOtp({ email: resetEmail, otp: cleanOtp });
-      setResetToken(data.resetToken);
-      setResetStep(3);
+      const res = await verifyResetOtp({ email: resetEmail, otp: resetOtp });
+      if (res.data?.data?.resetToken) {
+        setResetToken(res.data.data.resetToken);
+        setResetStep(3);
+      } else {
+        setAuthError('Invalid verification response from server.');
+      }
     } catch (err) {
-      setAuthError(err.response?.data?.message || 'Invalid or expired OTP code.');
+      setAuthError(err.response?.data?.message || 'Invalid or expired OTP. Please try again.');
     } finally {
       setStepLoading(false);
     }
   }
 
-  // Resend OTP handler
-  async function handleResendOtp() {
-    setStepLoading(true);
-    setAuthError('');
-    try {
-      await forgotPassword({ email: resetEmail });
-      setOtpResent(true);
-      setTimeout(() => setOtpResent(false), 5000);
-    } catch (err) {
-      setAuthError(err.response?.data?.message || 'Could not resend OTP. Please try again.');
-    } finally {
-      setStepLoading(false);
-    }
-  }
-
-  // Step 3: Set New Password
   async function handleResetPassword(e) {
     e.preventDefault();
     if (!newPassword || newPassword.length < 6) {
@@ -213,23 +199,23 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
   }
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center p-6 bg-[#fafaf9] dark:bg-slate-950 text-slate-900 dark:text-slate-100 animate-fadeIn">
-      <Card className="w-full max-w-md p-8 sm:p-9 space-y-6 shadow-md border border-slate-200/80 dark:border-slate-800">
+    <main className="flex min-h-screen w-full items-center justify-center p-6 bg-[#F8F6F0] text-[#20211E] animate-fadeIn">
+      <Card className="w-full max-w-md p-6 sm:p-8 space-y-5 border border-[#E3DED3] bg-[#FFFDF8]">
         {/* Header & Logo */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white font-black text-sm shadow-xs">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#315B45] text-[#FFFDF8] font-black text-xs">
               C
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+              <span className="text-xl font-bold tracking-tight text-[#20211E]">
                 Careerly
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mb-0.5" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#315B45] mb-0.5" />
             </div>
           </Link>
 
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-4">
+          <h1 className="text-lg sm:text-xl font-bold text-[#20211E] mt-3">
             {mode === 'forgot-password'
               ? resetStep === 4
                 ? 'Password Reset Complete'
@@ -237,12 +223,12 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
               : title}
           </h1>
 
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[#5F625C] mt-0.5">
             {mode === 'forgot-password' ? (
               resetStep === 1 ? 'Enter your email to receive a 6-digit verification code.' :
-              resetStep === 2 ? `Enter the 6-digit OTP sent to ${resetEmail}.` :
-              resetStep === 3 ? 'Choose a strong new password for your account.' :
-              'Your password has been successfully updated.'
+                resetStep === 2 ? `Enter the 6-digit OTP sent to ${resetEmail}.` :
+                  resetStep === 3 ? 'Choose a strong new password for your account.' :
+                    'Your password has been successfully updated.'
             ) : mode === 'login' ? (
               'Sign in to access your placement preparation workspace.'
             ) : (
@@ -253,42 +239,42 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
 
         {/* Global Error Banner */}
         {authError && (
-          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#FDECEB] border border-[#F7CBC9] text-[#B83A35] text-xs">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{authError}</span>
           </div>
         )}
 
-        {/* ================= FORGOT PASSWORD FLOW ================= */}
+        {/* FORGOT PASSWORD FLOW */}
         {mode === 'forgot-password' ? (
-          <div className="space-y-4 text-xs">
+          <div className="space-y-3.5 text-xs">
             {resetStep === 1 && (
-              <form onSubmit={handleSendOtp} className="space-y-4">
+              <form onSubmit={handleSendOtp} className="space-y-3.5">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-bold text-[#20211E] mb-1">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                     <input
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="student@example.com"
                       required
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                      className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                     />
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <Button type="submit" size="md" className="w-full" isLoading={stepLoading} icon={ArrowRight}>
                     Send OTP
                   </Button>
                 </div>
 
                 <div className="pt-1 text-center">
-                  <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-emerald-600 transition">
+                  <Link to="/login" className="inline-flex items-center gap-1 font-semibold text-[#5F625C] hover:text-[#315B45] transition">
                     <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
                   </Link>
                 </div>
@@ -296,13 +282,13 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
             )}
 
             {resetStep === 2 && (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <form onSubmit={handleVerifyOtp} className="space-y-3.5">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-bold text-[#20211E] mb-1">
                     Enter 6-Digit OTP Code
                   </label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <KeyRound className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                     <input
                       type="text"
                       maxLength={6}
@@ -311,18 +297,18 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
                       placeholder="123456"
                       autoFocus
                       required
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-sm tracking-widest font-mono text-center font-bold text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                      className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-sm tracking-widest font-mono text-center font-bold text-[#20211E] outline-none focus:border-[#315B45]"
                     />
                   </div>
                 </div>
 
                 {otpResent && (
-                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold text-center">
+                  <p className="text-[11px] text-[#315B45] font-semibold text-center">
                     A fresh 6-digit OTP has been sent to your email.
                   </p>
                 )}
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <Button type="submit" size="md" className="w-full" isLoading={stepLoading} icon={ArrowRight}>
                     Verify OTP
                   </Button>
@@ -332,7 +318,7 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
                   <button
                     type="button"
                     onClick={() => setResetStep(1)}
-                    className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1 font-semibold text-[#5F625C] hover:text-[#20211E] transition cursor-pointer"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" /> Change Email
                   </button>
@@ -340,7 +326,7 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
                     type="button"
                     onClick={handleResendOtp}
                     disabled={stepLoading}
-                    className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 font-semibold text-[#315B45] hover:underline cursor-pointer"
                   >
                     <RotateCw className="w-3.5 h-3.5" /> Resend OTP
                   </button>
@@ -349,42 +335,42 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
             )}
 
             {resetStep === 3 && (
-              <form onSubmit={handleResetPassword} className="space-y-4">
+              <form onSubmit={handleResetPassword} className="space-y-3.5">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-bold text-[#20211E] mb-1">
                     New Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="At least 6 characters"
                       required
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                      className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-bold text-[#20211E] mb-1">
                     Confirm New Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repeat new password"
                       required
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                      className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                     />
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <Button type="submit" size="md" className="w-full" isLoading={stepLoading} icon={ArrowRight}>
                     Reset Password
                   </Button>
@@ -393,14 +379,14 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
             )}
 
             {resetStep === 4 && (
-              <div className="text-center py-4 space-y-4">
-                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-6 h-6" />
+              <div className="text-center py-3 space-y-3">
+                <div className="w-10 h-10 bg-[#E8F0EA] text-[#315B45] rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
+                <p className="text-xs text-[#5F625C]">
                   Your password has been changed successfully. You can now log in using your new credentials.
                 </p>
-                <div className="pt-2">
+                <div className="pt-1">
                   <Button
                     type="button"
                     size="md"
@@ -414,15 +400,15 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
             )}
           </div>
         ) : (
-          /* ================= NORMAL LOGIN / REGISTER FLOW ================= */
-          <div className="space-y-4 text-xs">
+          /* NORMAL LOGIN / REGISTER FLOW */
+          <div className="space-y-3.5 text-xs">
             {/* Google Sign-in Button */}
             <div>
               <button
                 type="button"
                 onClick={handleGoogleClick}
                 disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/90 py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition shadow-xs cursor-pointer active:scale-[0.99]"
+                className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 px-3.5 text-xs font-semibold text-[#20211E] hover:bg-[#F7F4ED] transition cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -435,72 +421,72 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
             </div>
 
             {/* Subtle Divider */}
-            <div className="relative flex items-center justify-center my-4">
-              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-              <span className="bg-white dark:bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-400 shrink-0">
+            <div className="relative flex items-center justify-center my-3">
+              <div className="border-t border-[#E3DED3] w-full" />
+              <span className="bg-[#FFFDF8] px-2.5 text-[10px] uppercase font-bold text-[#74766F] shrink-0">
                 or with email
               </span>
             </div>
 
-            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 text-xs">
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3.5 text-xs">
               {mode === 'register' && (
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block font-bold text-[#20211E] mb-1">
                     Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <User className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                     <input
                       {...register('name', { required: true })}
                       type="text"
                       placeholder="Candidate Name"
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                      className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block font-bold text-[#20211E] mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                   <input
                     {...register('email', { required: true })}
                     type="email"
                     placeholder="student@example.com"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                    className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">
+                  <label className="font-bold text-[#20211E]">
                     Password
                   </label>
                   {mode === 'login' && (
                     <Link
                       to="/forgot-password"
-                      className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline text-[11px]"
+                      className="font-semibold text-[#315B45] hover:underline text-[11px]"
                     >
                       Forgot password?
                     </Link>
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#74766F]" />
                   <input
                     {...register('password', { required: true })}
                     type="password"
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500 font-medium"
+                    className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] py-2 pl-8 pr-3 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
                   />
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <Button
                   type="submit"
                   size="md"
@@ -511,23 +497,23 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
                   {loading
                     ? 'Authenticating...'
                     : mode === 'login'
-                    ? 'Sign In to Workspace'
-                    : 'Create Student Account'}
+                      ? 'Sign In to Workspace'
+                      : 'Create Student Account'}
                 </Button>
               </div>
 
-              <div className="pt-2 text-center text-xs text-slate-500">
+              <div className="pt-1 text-center text-xs text-[#5F625C]">
                 {mode === 'login' ? (
                   <p>
                     Don't have an account?{' '}
-                    <Link to="/register" className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                    <Link to="/register" className="font-bold text-[#315B45] hover:underline">
                       Create Account
                     </Link>
                   </p>
                 ) : (
                   <p>
                     Already have an account?{' '}
-                    <Link to="/login" className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                    <Link to="/login" className="font-bold text-[#315B45] hover:underline">
                       Sign In
                     </Link>
                   </p>

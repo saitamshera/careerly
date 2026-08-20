@@ -1,10 +1,9 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell, Sparkles } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 const pageTitles = {
-  '/dashboard': 'Dashboard Overview',
+  '/dashboard': 'Overview',
   '/roadmap': 'Preparation Roadmap',
   '/dsa-tracker': 'DSA Practice Tracker',
   '/coding-profiles': 'Coding Profiles Hub',
@@ -13,9 +12,9 @@ const pageTitles = {
   '/interview-prep': 'AI Interview Arena',
   '/resume': 'Resume Lab & ATS Scanner',
   '/chat-mentor': 'Career Mentor',
-  '/job-tracker': 'Job Application Tracker',
-  '/analytics': 'Conversion & Momentum Analytics',
-  '/profile': 'Student Profile & Settings'
+  '/job-tracker': 'Job Applications',
+  '/analytics': 'Conversion Analytics',
+  '/profile': 'Profile & Settings'
 };
 
 export function TopNav() {
@@ -24,26 +23,26 @@ export function TopNav() {
   const currentTitle = pageTitles[location.pathname] || 'Workspace';
 
   return (
-    <header className="sticky top-0 z-20 hidden lg:flex items-center justify-between h-14 px-6 sm:px-8 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/70 dark:border-slate-800/70 backdrop-blur-md">
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+    <header className="sticky top-0 z-20 hidden lg:flex items-center justify-between h-12 px-6 sm:px-8 bg-[#F8F6F0]/90 border-b border-[#E3DED3] backdrop-blur-xs">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold text-[#20211E]">
           {currentTitle}
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3.5">
         {/* Readiness Tag */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E8F0EA] border border-[#D1E0D7] text-[#315B45] text-xs font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#315B45]" />
           <span>Placement Season 2026</span>
         </div>
 
         {/* User Mini Avatar */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-          <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center">
-            {user?.name?.[0]?.toUpperCase() || 'U'}
+        <div className="flex items-center gap-2 pl-2 border-l border-[#E3DED3]">
+          <div className="w-6 h-6 rounded-md bg-[#315B45] text-white font-bold text-[0.65rem] flex items-center justify-center">
+            {user?.name?.[0]?.toUpperCase() || 'S'}
           </div>
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <span className="text-xs font-medium text-[#20211E]">
             {user?.name || 'Candidate'}
           </span>
         </div>

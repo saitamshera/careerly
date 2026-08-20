@@ -2,24 +2,25 @@ import React from 'react';
 
 export function Badge({
   children,
-  variant = 'neutral', // 'green' | 'orange' | 'red' | 'blue' | 'purple' | 'neutral'
+  variant = 'neutral', // 'green' | 'orange' | 'amber' | 'red' | 'blue' | 'purple' | 'neutral'
   size = 'md', // 'sm' | 'md'
   className = '',
   icon: Icon,
   ...props
 }) {
   const variantStyles = {
-    green: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60',
-    orange: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
-    red: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60',
-    blue: 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60',
-    purple: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60',
-    neutral: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+    green: 'bg-[#E8F0EA] text-[#315B45] border-[#D1E0D7]',
+    orange: 'bg-[#F7E7DD] text-[#C9683A] border-[#F0D0BF]',
+    amber: 'bg-[#FBF4E6] text-[#B9822E] border-[#F3E3C4]',
+    red: 'bg-[#FDECEB] text-[#B83A35] border-[#F7CBC9]',
+    blue: 'bg-[#EBF2F7] text-[#2C5E8A] border-[#D0E1F0]',
+    purple: 'bg-[#F1ECF7] text-[#5E3F8A] border-[#DFD5ED]',
+    neutral: 'bg-[#F7F4ED] text-[#5F625C] border-[#E3DED3]'
   };
 
   const sizeStyles = {
     sm: 'px-2 py-0.5 text-[0.68rem]',
-    md: 'px-2.5 py-1 text-xs'
+    md: 'px-2.5 py-0.5 text-xs'
   };
 
   return (

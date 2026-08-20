@@ -3,30 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Compass,
   Sliders,
-  RefreshCw,
   Sparkles,
-  Layers,
-  Code2,
-  FileText,
-  Video,
-  Award,
   Calendar,
-  Briefcase,
-  AlertTriangle,
   CheckCircle2,
-  Circle,
-  ExternalLink
+  Circle
 } from 'lucide-react';
 import { api } from '../services/api';
 import { PlacementJourneyStages } from '../components/roadmap/PlacementJourneyStages';
 import { RoadmapWeekAccordion } from '../components/roadmap/RoadmapWeekAccordion';
 import { CustomizeRoadmapModal } from '../components/roadmap/CustomizeRoadmapModal';
 import { Card, CardHeader } from '../components/ui/Card';
-import { MetricCard } from '../components/ui/MetricCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { Skeleton } from '../components/ui/Skeleton';
 
 export function RoadmapPage() {
   const queryClient = useQueryClient();
@@ -55,8 +44,7 @@ export function RoadmapPage() {
 
   // 2. Fetch user's saved roadmap
   const {
-    data: savedRoadmap,
-    isLoading: isRoadmapLoading
+    data: savedRoadmap
   } = useQuery({
     queryKey: ['savedRoadmap'],
     queryFn: async () => {
@@ -231,19 +219,19 @@ export function RoadmapPage() {
   const currentStageKey = activeRoadmap?.currentStage || 'foundation';
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* 1. Header with Actions */}
       <SectionHeader
         eyebrow="LONG-TERM PREPARATION STRATEGY"
         title={
-          <span className="flex items-center gap-2.5">
-            <Compass className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="flex items-center gap-2">
+            <Compass className="h-5 w-5 text-[#315B45] shrink-0" />
             <span>Placement Roadmap</span>
           </span>
         }
         description="Structured milestone roadmap calibrated against your current telemetry. Focuses on systematic progression from core foundations to live interview execution."
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
@@ -274,37 +262,34 @@ export function RoadmapPage() {
       />
 
       {/* 3. Gap Analysis Grid */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between pb-1 border-b border-[#E3DED3]">
           <div>
-            <span className="text-[0.68rem] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
-              Adaptive Gap Analysis
-            </span>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-sm sm:text-base font-bold text-[#20211E]">
               Current Telemetry vs. Placement Benchmarks
             </h2>
           </div>
-          <span className="text-xs text-slate-500 hidden sm:inline-block">
+          <span className="text-xs text-[#74766F] hidden sm:inline-block">
             Roadmap re-prioritizes around your largest telemetry gaps.
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {gapsBenchmark.map((gap, gIdx) => (
-            <Card key={gIdx} className="space-y-2.5">
-              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400 block">
+            <Card key={gIdx} className="space-y-2 p-3.5">
+              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#74766F] block">
                 {gap.label}
               </span>
               <div>
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{gap.metric}</p>
+                <p className="text-xs font-semibold text-[#5F625C]">{gap.metric}</p>
                 <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100 font-mono">{gap.current}</span>
-                  <span className="text-xs text-slate-400 font-medium">/ {gap.target} {gap.unit}</span>
+                  <span className="text-xl font-bold text-[#20211E] font-mono">{gap.current}</span>
+                  <span className="text-xs text-[#74766F] font-medium">/ {gap.target} {gap.unit}</span>
                 </div>
               </div>
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Remaining Gap:</span>
-                <span className={gap.gap === 0 ? 'text-emerald-600 font-bold' : 'text-amber-700 dark:text-amber-400 font-bold font-mono'}>
+              <div className="pt-2 border-t border-[#E3DED3] flex items-center justify-between text-xs">
+                <span className="text-[#74766F]">Remaining Gap:</span>
+                <span className={gap.gap === 0 ? 'text-[#315B45] font-bold' : 'text-[#C9683A] font-bold font-mono'}>
                   {gap.gap === 0 ? 'Goal Met ✓' : `${gap.gap} ${gap.unit}`}
                 </span>
               </div>
@@ -315,10 +300,10 @@ export function RoadmapPage() {
 
       {/* 4. Readiness Breakdown & Weekly Plan */}
       {activeRoadmap && (
-        <section className="space-y-6">
+        <section className="space-y-5">
           {/* Active Stage Exit Criteria */}
           {stages[selectedStageTab] && (
-            <Card className="space-y-4">
+            <Card className="space-y-3.5 p-4">
               <CardHeader
                 title={`Stage Exit Criteria: ${stages[selectedStageTab].name}`}
                 subtitle={stages[selectedStageTab].goal}
@@ -329,30 +314,29 @@ export function RoadmapPage() {
                 }
               />
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 {(stages[selectedStageTab].exitCriteria || []).map((crit, idx) => (
                   <div
                     key={idx}
-                    className={`p-3.5 rounded-xl border flex items-start gap-3 ${
-                      crit.met
-                        ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-950/20 dark:border-emerald-800/60'
-                        : 'border-slate-200/80 bg-slate-50/50 dark:bg-slate-800/50 dark:border-slate-700/60'
-                    }`}
+                    className={`p-3 rounded-lg border flex items-start gap-2.5 ${crit.met
+                      ? 'border-[#D1E0D7] bg-[#E8F0EA]/40 text-[#20211E]'
+                      : 'border-[#E3DED3] bg-[#FFFDF8]'
+                      }`}
                   >
                     <div className="mt-0.5 shrink-0">
                       {crit.met ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+                        <CheckCircle2 className="h-4 w-4 text-[#315B45]" />
                       ) : (
-                        <Circle className="h-4.5 w-4.5 text-slate-400" />
+                        <Circle className="h-4 w-4 text-[#74766F]" />
                       )}
                     </div>
                     <div className="space-y-0.5 flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <p className="text-xs font-bold text-[#20211E]">
                         {crit.name}
                       </p>
-                      <div className="flex items-center justify-between text-[0.7rem] text-slate-500">
-                        <span>Current: <strong className="text-slate-700 dark:text-slate-300">{crit.current}</strong></span>
-                        <span>Target: <strong className="text-slate-700 dark:text-slate-300">{crit.target}</strong></span>
+                      <div className="flex items-center justify-between text-[0.7rem] text-[#74766F]">
+                        <span>Current: <strong className="text-[#20211E]">{crit.current}</strong></span>
+                        <span>Target: <strong className="text-[#20211E]">{crit.target}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -362,20 +346,20 @@ export function RoadmapPage() {
           )}
 
           {/* Weekly Task Plan */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between pb-1 border-b border-[#E3DED3]">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <Calendar className="h-4 w-4 text-[#315B45]" />
+                <h3 className="text-sm font-bold text-[#20211E]">
                   Weekly Execution Curriculum
                 </h3>
               </div>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-[#74766F] font-medium">
                 {activeRoadmap.weeks?.length || 0} Total Weeks Planned
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {(activeRoadmap.weeks || []).map((week) => (
                 <RoadmapWeekAccordion
                   key={week.weekNumber}

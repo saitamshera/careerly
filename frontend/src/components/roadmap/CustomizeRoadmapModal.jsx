@@ -1,5 +1,4 @@
 import React from 'react';
-import { Sliders, RefreshCw } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 
@@ -26,12 +25,12 @@ export function CustomizeRoadmapModal({
       onClose={onClose}
       title="Customize Preparation Roadmap"
       subtitle="Configure target roles, available study hours, and technical focus areas."
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-xl"
     >
-      <form onSubmit={onSubmit} className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={onSubmit} className="space-y-4 text-xs">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
               Target Role
             </label>
             <input
@@ -39,7 +38,7 @@ export function CustomizeRoadmapModal({
               value={customForm.targetRole}
               onChange={(e) => setCustomForm({ ...customForm, targetRole: e.target.value })}
               placeholder="e.g. Software Engineer"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               required
             />
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -48,11 +47,10 @@ export function CustomizeRoadmapModal({
                   key={role}
                   type="button"
                   onClick={() => setCustomForm({ ...customForm, targetRole: role })}
-                  className={`px-2 py-0.5 rounded-lg text-[0.65rem] font-semibold border transition cursor-pointer ${
-                    customForm.targetRole === role
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700 font-bold'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                  }`}
+                  className={`px-2 py-0.5 rounded-md text-[0.65rem] font-semibold border transition cursor-pointer ${customForm.targetRole === role
+                    ? 'bg-[#E8F0EA] text-[#315B45] border-[#D1E0D7] font-bold'
+                    : 'bg-[#F7F4ED] text-[#5F625C] border-[#E3DED3] hover:border-[#D7D0C4]'
+                    }`}
                 >
                   {role}
                 </button>
@@ -61,25 +59,25 @@ export function CustomizeRoadmapModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Target Company <span className="text-[0.65rem] text-slate-400 font-normal">(Optional)</span>
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
+              Target Company <span className="text-[0.65rem] text-[#74766F] font-normal">(Optional)</span>
             </label>
             <input
               type="text"
               value={customForm.targetCompany}
               onChange={(e) => setCustomForm({ ...customForm, targetCompany: e.target.value })}
               placeholder="e.g. Google, Amazon, Stripe"
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
             />
-            <p className="text-[0.68rem] text-slate-400 mt-1">
-              Tailors interview and assessment patterns to this company's hiring bar.
+            <p className="text-[0.68rem] text-[#74766F] mt-1">
+              Tailors interview and assessment patterns to this company.
             </p>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
               Timeline: {customForm.monthsRemaining} Months (~{customForm.monthsRemaining * 4} Weeks)
             </label>
             <input
@@ -89,45 +87,32 @@ export function CustomizeRoadmapModal({
               step="1"
               value={customForm.monthsRemaining}
               onChange={(e) => setCustomForm({ ...customForm, monthsRemaining: Number(e.target.value) })}
-              className="w-full accent-emerald-600"
+              className="w-full accent-[#315B45]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
               Daily Commitment: {customForm.hoursDaily} Hours / Day
             </label>
             <input
               type="range"
               min="1"
-              max="10"
+              max="12"
               step="1"
               value={customForm.hoursDaily}
               onChange={(e) => setCustomForm({ ...customForm, hoursDaily: Number(e.target.value) })}
-              className="w-full accent-emerald-600"
+              className="w-full accent-[#315B45]"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-            Weak DSA Topics / Focus Areas
-          </label>
-          <input
-            type="text"
-            value={customForm.weakTopics}
-            onChange={(e) => setCustomForm({ ...customForm, weakTopics: e.target.value })}
-            placeholder="e.g. Dynamic Programming, Graphs, System Design"
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
-          <Button variant="secondary" onClick={onClose} size="sm">
+        <div className="pt-2 border-t border-[#E3DED3] flex items-center justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" isLoading={isPending} size="sm">
-            Generate Tailored Roadmap
+          <Button type="submit" size="sm" isLoading={isPending}>
+            {isPending ? 'Generating...' : 'Save & Recalibrate'}
           </Button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Code2,
   Flame,
@@ -15,7 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { api } from '../services/api';
-import { Card, CardHeader } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -30,7 +30,6 @@ const TOPICS = [
   'Recursion', 'Math', 'Bit Manipulation', 'Sorting'
 ];
 const PLATFORMS = ['LeetCode', 'GFG', 'CodeForces', 'HackerRank', 'Other'];
-const LANGUAGES = ['C++', 'Java', 'Python', 'JavaScript', 'Go', 'Rust'];
 
 const initialForm = {
   title: '',
@@ -79,15 +78,6 @@ export function DsaTrackerPage() {
   const { data: stats } = useQuery({
     queryKey: ['dsa-stats'],
     queryFn: async () => (await api.get('/dsa/stats')).data?.data
-  });
-
-  // Mutations
-  const syncLeetCode = useMutation({
-    mutationFn: async () => (await api.post('/profile/sync-leetcode')),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['dsa-stats'] });
-    }
   });
 
   const saveProblem = useMutation({
@@ -143,13 +133,13 @@ export function DsaTrackerPage() {
   };
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full animate-fadeIn">
+    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
       {/* 1. Page Header */}
       <SectionHeader
         eyebrow="PROBLEM SOLVING LOG & MASTERY"
         title={
-          <span className="flex items-center gap-2.5">
-            <Code2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="flex items-center gap-2">
+            <Code2 className="h-5 w-5 text-[#315B45] shrink-0" />
             <span>DSA Practice Tracker</span>
           </span>
         }
@@ -170,7 +160,7 @@ export function DsaTrackerPage() {
       />
 
       {/* 2. LeetCode Live Sync Bar & Stats Row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Total Logged"
           value={`${problems.length}`}
@@ -205,16 +195,16 @@ export function DsaTrackerPage() {
       </div>
 
       {/* 3. Filters & Search Bar */}
-      <Card padding="sm" className="space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <Card padding="sm" className="space-y-3 p-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#74766F]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search problems by title, company..."
-              className="w-full pl-9 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] placeholder:text-[#85877F] outline-none focus:border-[#315B45]"
             />
           </div>
 
@@ -222,7 +212,7 @@ export function DsaTrackerPage() {
             <select
               value={diffFilter}
               onChange={(e) => setDiffFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] outline-none focus:border-[#315B45] cursor-pointer"
             >
               <option value="All">All Difficulties</option>
               <option value="easy">Easy</option>
@@ -233,7 +223,7 @@ export function DsaTrackerPage() {
             <select
               value={topicFilter}
               onChange={(e) => setTopicFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] outline-none focus:border-[#315B45] cursor-pointer"
             >
               <option value="All">All Topics</option>
               {TOPICS.map((t) => (
@@ -246,7 +236,7 @@ export function DsaTrackerPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-emerald-500 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-[#E3DED3] bg-[#FFFDF8] text-[#20211E] outline-none focus:border-[#315B45] cursor-pointer"
             >
               <option value="All">All Statuses</option>
               <option value="solved">Solved</option>
@@ -273,31 +263,31 @@ export function DsaTrackerPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[0.65rem]">
+              <thead className="bg-[#F7F4ED] border-b border-[#E3DED3] text-[#74766F] font-bold uppercase tracking-wider text-[0.65rem]">
                 <tr>
-                  <th className="py-3.5 px-4">Problem</th>
-                  <th className="py-3.5 px-4">Topic</th>
-                  <th className="py-3.5 px-4">Difficulty</th>
-                  <th className="py-3.5 px-4">Platform</th>
-                  <th className="py-3.5 px-4">Time Taken</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">Problem</th>
+                  <th className="py-3 px-4">Topic</th>
+                  <th className="py-3 px-4">Difficulty</th>
+                  <th className="py-3 px-4">Platform</th>
+                  <th className="py-3 px-4">Time</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+              <tbody className="divide-y divide-[#E3DED3]">
                 {filteredProblems.map((p) => (
                   <tr
                     key={p._id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition group"
+                    className="hover:bg-[#F7F4ED]/60 transition group"
                   >
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         {p.status === 'solved' ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#315B45] shrink-0" />
                         ) : (
-                          <Circle className="h-4 w-4 text-amber-500 shrink-0" />
+                          <Circle className="h-3.5 w-3.5 text-[#B9822E] shrink-0" />
                         )}
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                        <span className="font-bold text-[#20211E]">
                           {p.title}
                         </span>
                         {p.link && (
@@ -305,41 +295,41 @@ export function DsaTrackerPage() {
                             href={p.link}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+                            className="text-[#74766F] hover:text-[#315B45] transition"
                           >
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
                       </div>
                       {p.approach && (
-                        <p className="text-[0.68rem] text-slate-400 line-clamp-1 mt-0.5 pl-6">
+                        <p className="text-[0.68rem] text-[#5F625C] line-clamp-1 mt-0.5 pl-5.5">
                           {p.approach}
                         </p>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-3 px-4 text-[#5F625C]">
                       {p.topic}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       {getDiffBadge(p.difficulty)}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono text-[0.7rem]">
+                    <td className="py-3 px-4 text-[#74766F] font-mono text-[0.7rem]">
                       {p.platform || 'LeetCode'}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 font-mono text-[0.7rem]">
+                    <td className="py-3 px-4 text-[#74766F] font-mono text-[0.7rem]">
                       {p.timeTaken ? `${p.timeTaken}m` : '-'}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3 px-4">
                       <Badge variant={p.status === 'solved' ? 'green' : 'orange'} size="sm">
                         {p.status === 'solved' ? 'Solved' : 'Revision'}
                       </Badge>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition">
                         <button
                           type="button"
                           onClick={() => handleEdit(p)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                          className="p-1 rounded-md text-[#74766F] hover:text-[#20211E] hover:bg-[#F7F4ED] transition cursor-pointer"
                           title="Edit"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
@@ -351,7 +341,7 @@ export function DsaTrackerPage() {
                               deleteProblem.mutate(p._id);
                             }
                           }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                          className="p-1 rounded-md text-[#74766F] hover:text-[#B83A35] hover:bg-[#FDECEB] transition cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -372,7 +362,7 @@ export function DsaTrackerPage() {
         onClose={() => setIsFormOpen(false)}
         title={editingId ? 'Edit Problem Log' : 'Log DSA Problem'}
         subtitle="Keep track of the solution pattern, notes, and time taken."
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-xl"
       >
         <form
           onSubmit={(e) => {
@@ -384,11 +374,11 @@ export function DsaTrackerPage() {
                 : []
             });
           }}
-          className="space-y-4"
+          className="space-y-3 text-xs"
         >
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Problem Title
               </label>
               <input
@@ -396,31 +386,31 @@ export function DsaTrackerPage() {
                 placeholder="e.g. Trapping Rain Water"
                 value={formState.title}
                 onChange={(e) => setFormState({ ...formState, title: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 LeetCode #
               </label>
               <input
                 placeholder="e.g. 42"
                 value={formState.leetcodeId}
                 onChange={(e) => setFormState({ ...formState, leetcodeId: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               />
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Difficulty
               </label>
               <select
                 value={formState.difficulty}
                 onChange={(e) => setFormState({ ...formState, difficulty: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               >
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
@@ -428,13 +418,13 @@ export function DsaTrackerPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Topic
               </label>
               <select
                 value={formState.topic}
                 onChange={(e) => setFormState({ ...formState, topic: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               >
                 {TOPICS.map((t) => (
                   <option key={t} value={t}>
@@ -444,13 +434,13 @@ export function DsaTrackerPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Platform
               </label>
               <select
                 value={formState.platform}
                 onChange={(e) => setFormState({ ...formState, platform: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               >
                 {PLATFORMS.map((p) => (
                   <option key={p} value={p}>
@@ -463,24 +453,24 @@ export function DsaTrackerPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Time Taken (minutes)
               </label>
               <input
                 type="number"
                 value={formState.timeTaken}
                 onChange={(e) => setFormState({ ...formState, timeTaken: Number(e.target.value) })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#20211E] mb-1">
                 Status
               </label>
               <select
                 value={formState.status}
                 onChange={(e) => setFormState({ ...formState, status: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] px-3 py-1.5 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               >
                 <option value="solved">Solved</option>
                 <option value="unsolved">Needs Revision</option>
@@ -489,19 +479,19 @@ export function DsaTrackerPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#20211E] mb-1">
               Approach / Pattern Summary
             </label>
             <textarea
               rows={2}
-              placeholder="e.g. Two pointers moving inward from both ends, tracking max height seen so far."
+              placeholder="e.g. Two pointers moving inward from both ends..."
               value={formState.approach}
               onChange={(e) => setFormState({ ...formState, approach: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-[#E3DED3] bg-[#FFFDF8] p-2 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#E3DED3] flex items-center justify-end gap-2">
             <Button variant="secondary" size="sm" onClick={() => setIsFormOpen(false)}>
               Cancel
             </Button>

@@ -12,6 +12,7 @@ const interviewSchema = new mongoose.Schema(
     topic: { type: String, default: '' },
     targetRole: { type: String, default: 'SDE-1' },
     targetCompany: { type: String, default: '' },
+    companyIntel: { type: String, default: '' },
     jobDescription: { type: String, default: '' },
     status: { type: String, enum: ['in-progress', 'completed'], default: 'in-progress' },
     questions: [{ type: String }],

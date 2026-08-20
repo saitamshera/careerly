@@ -7,7 +7,8 @@ const sharedConversationSchema = new mongoose.Schema(
     messages: [
       {
         role: { type: String, enum: ['user', 'assistant'], required: true },
-        content: { type: String, default: '' }
+        content: { type: String, default: '' },
+        metadata: { type: Object, default: {} }
       }
     ]
   },

@@ -30,14 +30,31 @@ async function createConversation(conversationData) {
 async function findConversationsByUserId(userId) {
   const conversations = await ChatConversation.find({ userId }).sort({ updatedAt: -1 });
   
-  // Aggregate message count for each conversation
+  // Aggregate message count, preview text, and attachment indicator for each conversation
   const results = await Promise.all(
     conversations.map(async (conv) => {
       const count = await ChatHistory.countDocuments({ conversationId: conv._id });
+      const firstUserMsg = await ChatHistory.findOne({ conversationId: conv._id, role: 'user' }).sort({ createdAt: 1 });
+      const latestMsg = await ChatHistory.findOne({ conversationId: conv._id }).sort({ createdAt: -1 });
+      const hasAttachment = Boolean(firstUserMsg?.metadata?.attachment || latestMsg?.metadata?.attachment);
+      const attachmentName = firstUserMsg?.metadata?.attachment?.name || latestMsg?.metadata?.attachment?.name || '';
+      
+      let preview = '';
+      if (firstUserMsg?.content) {
+        preview = firstUserMsg.content;
+      } else if (hasAttachment) {
+        preview = `${attachmentName || 'Document'} attached`;
+      } else if (latestMsg?.content) {
+        preview = latestMsg.content;
+      }
+
       return {
         _id: conv._id,
         id: conv._id,
         title: conv.title,
+        preview: preview ? preview.slice(0, 90) : '',
+        hasAttachment,
+        attachmentName,
         messageCount: count,
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt
@@ -102,5 +119,3 @@ module.exports = {
   findSharedConversationByToken,
   deleteInterviewByIdAndUserId
 };
-
-
