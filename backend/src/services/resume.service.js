@@ -94,38 +94,50 @@ function validateObjectId(id, message = 'Invalid id') {
 
 function getFileUrl(file) {
   const pathPart = file?.filename || file?.originalname || 'resume-file';
-  return `${env.CLIENT_URL}/uploads/${encodeURIComponent(pathPart)}`;
+  const primaryClientUrl = String(env.CLIENT_URL || 'http://localhost:5173').split(',')[0].trim();
+  return `${primaryClientUrl}/uploads/${encodeURIComponent(pathPart)}`;
 }
 
 async function uploadResumeFileToCloudinary(file) {
   const cloudinary = configureCloudinary();
 
   if (!cloudinary || !file?.buffer || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
-    throw new ApiError(400, 'Invalid file buffer');
+    return {
+      secureUrl: getFileUrl(file),
+      publicId: ''
+    };
   }
 
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: 'auto',
-        folder: 'placement-companion/resumes',
-        public_id: `${Date.now()}-${String(file.originalname || 'resume').replace(/[^a-zA-Z0-9_-]/g, '_')}`
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-          return;
+  try {
+    return await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'auto',
+          folder: 'placement-companion/resumes',
+          public_id: `${Date.now()}-${String(file.originalname || 'resume').replace(/[^a-zA-Z0-9_-]/g, '_')}`
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve({
+            secureUrl: result.secure_url,
+            publicId: result.public_id
+          });
         }
+      );
 
-        resolve({
-          secureUrl: result.secure_url,
-          publicId: result.public_id
-        });
-      }
-    );
-
-    uploadStream.end(file.buffer);
-  });
+      uploadStream.end(file.buffer);
+    });
+  } catch (cloudErr) {
+    logger.warn('Cloudinary upload failed, falling back to local file reference:', cloudErr?.message || cloudErr);
+    return {
+      secureUrl: getFileUrl(file),
+      publicId: ''
+    };
+  }
 }
 
 async function extractTextFromUploadedFile(file) {

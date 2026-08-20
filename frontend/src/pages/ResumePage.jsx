@@ -114,10 +114,12 @@ export function ResumePage() {
     },
     onError: (error) => {
       setActiveReportOverride(null);
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "We couldn't complete the analysis right now. Please try again.";
+      const status = error?.response?.status;
+      const serverMsg = error?.response?.data?.message;
+      let msg = serverMsg || error?.message || "We couldn't complete the analysis right now. Please try again.";
+      if (status && !msg.includes(String(status))) {
+        msg = `${msg} (HTTP ${status})`;
+      }
       setFormError(msg);
     }
   });
