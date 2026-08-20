@@ -480,6 +480,127 @@ export function ResumePage() {
       {/* 5. Scorecard & Results Dashboard */}
       {showResults && activeReport && (
         <section className="space-y-6">
+          {/* Dedicated Job Match Analysis Card (Rendered ONLY when a Job Description was provided) */}
+          {(activeReport.targetJobDescription || typeof activeReport.jobMatchScore === 'number') && (
+            <Card className="p-6 sm:p-8 space-y-6 border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-emerald-200/60 dark:border-emerald-800/40">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                        Job Description Match Analysis
+                      </h3>
+                      <Badge variant="green" size="sm">
+                        Role Targeted
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Targeted evaluation against your customized job description requirements
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-start sm:self-auto bg-white dark:bg-slate-900 px-4 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                  <div className="text-right">
+                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-slate-400 block">
+                      Role Match Score
+                    </span>
+                    <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                      {activeReport.jobMatchScore ?? activeReport.atsKeywordMatch ?? 0}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Matched vs Missing Skills Grid */}
+              <div className="grid gap-5 sm:grid-cols-2">
+                {/* Matched Qualifications */}
+                <div className="p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 dark:bg-emerald-950/20 dark:border-emerald-800/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      Matched Job Qualifications ({activeReport.matchedKeywords?.length || 0})
+                    </span>
+                    <Badge variant="green" size="sm">Present</Badge>
+                  </div>
+
+                  {activeReport.matchedKeywords && activeReport.matchedKeywords.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {activeReport.matchedKeywords.map((kw, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-100/80 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700/60"
+                        >
+                          ✓ {kw}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No specific direct keywords matched yet.</p>
+                  )}
+                </div>
+
+                {/* Missing Job Requirements */}
+                <div className="p-4 rounded-xl border border-rose-200/80 bg-rose-50/40 dark:bg-rose-950/20 dark:border-rose-800/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                      Missing Job Requirements ({activeReport.missingSkills?.length || 0})
+                    </span>
+                    <Badge variant="red" size="sm">Gaps</Badge>
+                  </div>
+
+                  {activeReport.missingSkills && activeReport.missingSkills.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {activeReport.missingSkills.map((sk, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-100/80 text-rose-900 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-300/60 dark:border-rose-700/60"
+                        >
+                          ✕ {sk}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">All key job requirements found in resume.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Top 3 Gaps & Fast Recommendations */}
+              {activeReport.topGaps && activeReport.topGaps.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <span className="text-[0.68rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                    Top 3 High-Impact Fixes to Qualify for This Role:
+                  </span>
+                  <div className="grid gap-2.5 sm:grid-cols-3">
+                    {activeReport.topGaps.map((item, gIdx) => (
+                      <div
+                        key={gIdx}
+                        className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900 space-y-1.5 shadow-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-[0.65rem] font-bold text-emerald-800 dark:text-emerald-300 shrink-0">
+                            {gIdx + 1}
+                          </span>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {item.gap}
+                          </p>
+                        </div>
+                        <p className="text-[0.72rem] text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {item.recommendation}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Main Scorecard Banner */}
           <Card className="p-6 sm:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">

@@ -42,7 +42,9 @@ function getSafeUser(user) {
 }
 
 async function registerUser(payload) {
-  const existingUser = await findUserByEmail(payload.email);
+  const cleanEmail = String(payload.email || '').trim().toLowerCase();
+  const cleanName = String(payload.name || '').trim();
+  const existingUser = await findUserByEmail(cleanEmail);
 
   if (existingUser) {
     throw new ApiError(409, 'Email already registered');
@@ -52,6 +54,8 @@ async function registerUser(payload) {
   const emailVerificationToken = createOneTimeToken();
   const user = await createUser({
     ...payload,
+    name: cleanName,
+    email: cleanEmail,
     password: hashedPassword,
     emailVerificationToken,
     emailVerificationExpiresAt: new Date(Date.now() + 15 * 60 * 1000)
@@ -73,7 +77,8 @@ async function registerUser(payload) {
 }
 
 async function loginUser({ email, password }) {
-  const user = await findUserByEmail(email).select('+password');
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const user = await findUserByEmail(cleanEmail).select('+password');
 
   if (!user) {
     throw new ApiError(401, 'Invalid credentials');

@@ -15,7 +15,8 @@ export function AIInterviewPage() {
   const navigate = useNavigate();
   const { id: paramInterviewId } = useParams();
   const [searchParams] = useSearchParams();
-  const urlTopic = searchParams.get('topic') || '';
+  const urlCompany = searchParams.get('company') || '';
+  const urlRole = searchParams.get('role') || searchParams.get('topic') || '';
   const urlType = searchParams.get('type') || '';
   const urlId = paramInterviewId || searchParams.get('id') || null;
 
@@ -38,10 +39,23 @@ export function AIInterviewPage() {
   // Config Form State
   const [selectedType, setSelectedType] = useState(urlType || 'technical');
   const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
-  const [targetRole, setTargetRole] = useState(urlTopic || 'SDE-1');
-  const [targetCompany, setTargetCompany] = useState('');
+  const [targetRole, setTargetRole] = useState(urlRole || 'SDE-1');
+  const [targetCompany, setTargetCompany] = useState(urlCompany || '');
   const [jobDescription, setJobDescription] = useState('');
   const [showJobDescField, setShowJobDescField] = useState(false);
+
+  // Synchronize company & role from query params if navigated with new params
+  useEffect(() => {
+    if (urlCompany) {
+      setTargetCompany(urlCompany);
+    }
+    if (urlRole) {
+      setTargetRole(urlRole);
+    }
+    if (urlType) {
+      setSelectedType(urlType);
+    }
+  }, [urlCompany, urlRole, urlType]);
 
   const sessionTimerRef = useRef(null);
 

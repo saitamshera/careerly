@@ -1,7 +1,8 @@
 const { User } = require('../models/User');
 
 function findUserByEmail(email) {
-  return User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  return User.findOne({ email: normalizedEmail });
 }
 
 async function findUserById(userId) {

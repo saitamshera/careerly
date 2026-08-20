@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
@@ -53,6 +54,7 @@ const initialForm = {
 };
 
 export function JobTrackerPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState('kanban');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -302,6 +304,21 @@ export function JobTrackerPage() {
                           <span>{job.location}</span>
                         </p>
                       )}
+
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/interview-prep?company=${encodeURIComponent(job.company)}&role=${encodeURIComponent(job.role)}`);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[0.68rem] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/60 transition cursor-pointer"
+                          title="Practice AI Mock Interview for this job"
+                        >
+                          <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>Practice Interview</span>
+                        </button>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -340,11 +357,21 @@ export function JobTrackerPage() {
                       {job.updatedAt ? new Date(job.updatedAt).toLocaleDateString() : 'Recent'}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/interview-prep?company=${encodeURIComponent(job.company)}&role=${encodeURIComponent(job.role)}`)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[0.68rem] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/60 transition cursor-pointer"
+                          title="Practice AI Mock Interview for this job"
+                        >
+                          <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>Practice</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => openModal(job)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                          title="Edit Application"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
@@ -355,7 +382,8 @@ export function JobTrackerPage() {
                               deleteJob.mutate(job._id);
                             }
                           }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Delete Application"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -484,13 +512,29 @@ export function JobTrackerPage() {
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-            <Button variant="secondary" size="sm" onClick={closeModal}>
-              Cancel
-            </Button>
-            <Button type="submit" size="sm" isLoading={saveJob.isPending}>
-              {editingId ? 'Save Changes' : 'Add Application'}
-            </Button>
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2.5">
+            {editingId && formState.company ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                icon={Sparkles}
+                onClick={() => {
+                  navigate(`/interview-prep?company=${encodeURIComponent(formState.company)}&role=${encodeURIComponent(formState.role)}`);
+                }}
+              >
+                Practice Interview
+              </Button>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={closeModal}>
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" isLoading={saveJob.isPending}>
+                {editingId ? 'Save Changes' : 'Add Application'}
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>

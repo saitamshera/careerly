@@ -12,8 +12,15 @@ const resumeReportSchema = new mongoose.Schema(
     weaknesses: [{ type: String }],
     suggestions: [{ type: String }],
     targetJobDescription: { type: String, default: '' },
+    jobMatchScore: { type: Number, default: null },
     matchedKeywords: [{ type: String }],
     atsKeywordMatch: { type: Number, default: 0 },
+    topGaps: [
+      {
+        gap: { type: String, default: '' },
+        recommendation: { type: String, default: '' }
+      }
+    ],
     sourceText: { type: String, default: '' }
   },
   { timestamps: true }

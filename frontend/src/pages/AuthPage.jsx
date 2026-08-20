@@ -123,7 +123,12 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
   async function handleFormSubmit(data) {
     setAuthError('');
     try {
-      await onSubmit(data);
+      const sanitizedData = {
+        ...data,
+        email: String(data.email || '').trim().toLowerCase(),
+        name: String(data.name || '').trim()
+      };
+      await onSubmit(sanitizedData);
     } catch (err) {
       setAuthError(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
     }

@@ -16,11 +16,13 @@ function normalizeText(input) {
 
 async function scoreResume(text, targetJobDescription = '') {
   const normalizedText = normalizeText(text);
+  const hasJobDescription = Boolean(String(targetJobDescription || '').trim());
   
   if (!env.GEMINI_API_KEY) {
     logger.warn('GEMINI_API_KEY is not set. Falling back to basic scoring.');
     return {
       atsScore: 50,
+      jobMatchScore: hasJobDescription ? 50 : null,
       grammar: 80,
       keywords: [],
       targetKeywords: [],
@@ -29,48 +31,70 @@ async function scoreResume(text, targetJobDescription = '') {
       missingSkills: [],
       strengths: ['Add GEMINI_API_KEY to enable AI scoring'],
       weaknesses: [],
+      topGaps: [],
       suggestions: []
     };
   }
 
   const responseSchema = z.object({
     atsScore: z.number().min(0).max(100),
+    jobMatchScore: z.number().min(0).max(100).nullable().optional(),
     grammar: z.number().min(0).max(100),
-    keywords: z.array(z.string()),
-    targetKeywords: z.array(z.string()),
-    matchedKeywords: z.array(z.string()),
-    atsKeywordMatch: z.number().min(0).max(100),
-    missingSkills: z.array(z.string()),
-    strengths: z.array(z.string()),
-    weaknesses: z.array(z.string()),
-    suggestions: z.array(z.string())
+    keywords: z.array(z.string()).default([]),
+    targetKeywords: z.array(z.string()).default([]),
+    matchedKeywords: z.array(z.string()).default([]),
+    atsKeywordMatch: z.number().min(0).max(100).default(0),
+    missingSkills: z.array(z.string()).default([]),
+    strengths: z.array(z.string()).default([]),
+    weaknesses: z.array(z.string()).default([]),
+    topGaps: z.array(
+      z.object({
+        gap: z.string(),
+        recommendation: z.string()
+      })
+    ).default([]),
+    suggestions: z.array(z.string()).default([])
   });
 
   const prompt = `You are an expert ATS (Applicant Tracking System) and senior technical recruiter.
-Analyze the following resume text against the target job description (if provided).
+Analyze the following resume text.
 
 Resume Text:
 """
 ${normalizedText.substring(0, 8000)}
 """
 
-Target Job Description:
+${hasJobDescription ? `Target Job Description:
 """
-${targetJobDescription ? targetJobDescription.substring(0, 3000) : 'None provided. Evaluate based on general software engineering standards.'}
+${targetJobDescription.substring(0, 3000)}
 """
+
+SPECIAL INSTRUCTION FOR JOB MATCH MODE:
+Because a specific Job Description was provided, thoroughly evaluate the alignment between this candidate's resume and the target role:
+1. "jobMatchScore": Calculate an accurate match score (0-100) specifically measuring how well the candidate's skills, experience, and tools fulfill the requirements in this Job Description.
+2. "matchedKeywords": List the key technologies, qualifications, and domain skills from the Job Description that ARE present in the resume.
+3. "missingSkills": List required or highly preferred skills/tools from the Job Description that are MISSING or weak in the resume.
+4. "topGaps": Provide the top 3 highest-priority qualification gaps with specific actionable recommendations to quickly close them.
+5. "atsKeywordMatch": Percentage (0-100) of target job keywords found.
+` : `Target Job Description:
+None provided. Evaluate based on general software engineering ATS standards. Set "jobMatchScore" to null and "topGaps" to empty array.`}
 
 Respond STRICTLY in JSON format with the following schema:
 {
-  "atsScore": number (0-100),
+  "atsScore": number (0-100, general ATS formatting & structure score),
+  "jobMatchScore": ${hasJobDescription ? 'number (0-100, specific match score against the provided job description)' : 'null'},
   "grammar": number (0-100),
-  "keywords": string[],
-  "targetKeywords": string[],
-  "matchedKeywords": string[],
-  "atsKeywordMatch": number (0-100, percentage of targetKeywords found),
-  "missingSkills": string[],
-  "strengths": string[],
-  "weaknesses": string[],
-  "suggestions": string[]
+  "keywords": string[] (core technical competencies found in resume),
+  "targetKeywords": string[] (key technologies required in job description, or general tech stack),
+  "matchedKeywords": string[] (skills from job description that candidate possesses),
+  "atsKeywordMatch": number (0-100),
+  "missingSkills": string[] (must-have qualifications candidate lacks for this role),
+  "strengths": string[] (3-5 verified resume strengths),
+  "weaknesses": string[] (3-5 general resume improvement areas),
+  "topGaps": [
+    { "gap": "string (specific missing skill/tool/experience)", "recommendation": "string (how to address or frame it)" }
+  ],
+  "suggestions": string[] (actionable phrasing recommendations)
 }`;
 
   const result = await generateStructuredJSON({
@@ -216,11 +240,13 @@ async function storeResume(userId, file, extractedText, targetJobDescription = '
     resumeId: resume._id,
     userId,
     atsScore: reportInput.atsScore,
+    jobMatchScore: typeof reportInput.jobMatchScore === 'number' ? reportInput.jobMatchScore : null,
     grammar: reportInput.grammar,
     keywords: reportInput.keywords,
     missingSkills: reportInput.missingSkills,
     strengths: reportInput.strengths,
     weaknesses: reportInput.weaknesses,
+    topGaps: reportInput.topGaps || [],
     suggestions: reportInput.suggestions,
     targetJobDescription: normalizeText(targetJobDescription),
     matchedKeywords: reportInput.matchedKeywords,
@@ -301,11 +327,13 @@ async function analyzeResumeInput({ userId, resumeId, file, extractedText, targe
     resumeId: targetResumeId || resume?._id,
     userId,
     atsScore: analysis.atsScore,
+    jobMatchScore: typeof analysis.jobMatchScore === 'number' ? analysis.jobMatchScore : null,
     grammar: analysis.grammar,
     keywords: analysis.keywords,
     missingSkills: analysis.missingSkills,
     strengths: analysis.strengths,
     weaknesses: analysis.weaknesses,
+    topGaps: analysis.topGaps || [],
     suggestions: analysis.suggestions,
     targetJobDescription: normalizeText(targetJobDescription),
     matchedKeywords: analysis.matchedKeywords,
