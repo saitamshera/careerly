@@ -109,7 +109,7 @@ export function InterviewConfigCard({
                 type="text"
                 value={targetCompany}
                 onChange={(e) => setTargetCompany(e.target.value)}
-                placeholder="e.g. Google, Amazon"
+                placeholder="e.g. Google, Amazon, Uber"
                 className="w-full rounded-lg border border-[#E5E0D6] bg-[#FFFDF8] p-2 text-xs text-[#20211E] outline-none focus:border-[#315B45]"
               />
             </div>

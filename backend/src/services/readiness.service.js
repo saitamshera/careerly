@@ -328,7 +328,8 @@ async function getUnifiedJobReadiness(userId, targetOverride = null) {
     readinessDimensions: readiness.dimensions,
     jobMatch,
     jobRequirements,
-    pipelineStats
+    pipelineStats,
+    telemetry
   });
 
   // 6. Closed-Loop Delta Explanation

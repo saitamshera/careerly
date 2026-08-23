@@ -18,6 +18,7 @@ const { githubRoutes } = require('./routes/github.routes');
 const { gmailRoutes } = require('./routes/gmail.routes');
 const { profileRoutes } = require('./routes/profile.routes');
 const readinessRoutes = require('./routes/readiness.routes');
+const { activityRoutes } = require('./routes/activity.routes');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/github', githubRoutes);
 app.use('/api/gmail', gmailRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/readiness', readinessRoutes);
+app.use('/api/activity', activityRoutes);
 
 app.use(errorHandler);
 

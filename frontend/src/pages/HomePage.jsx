@@ -10,22 +10,15 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Logo } from '../components/ui/Logo';
 
 export function HomePage() {
   return (
     <main className="relative min-h-screen bg-[#F8F6F0] text-[#20211E] px-4 pb-20 pt-6 sm:px-8 lg:px-12 animate-fadeIn">
       {/* Header Bar */}
       <header className="relative mx-auto flex max-w-5xl items-center justify-between rounded-xl border border-[#E3DED3] bg-[#FFFDF8] px-5 py-3 shadow-2xs">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#315B45] text-[#FFFDF8] font-black text-xs">
-            C
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-lg font-bold tracking-tight text-[#20211E]">
-              Careerly
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#315B45] mb-0.5" />
-          </div>
+        <Link to="/" className="flex items-center">
+          <Logo />
         </Link>
 
         <div className="flex items-center gap-2.5">

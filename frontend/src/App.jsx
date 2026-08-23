@@ -11,6 +11,7 @@ import { AIInterviewPage } from './pages/AIInterviewPage';
 import { RoadmapPage } from './pages/RoadmapPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { JobTrackerPage } from './pages/JobTrackerPage';
+import { EngineeringActivityPage } from './pages/EngineeringActivityPage';
 import { DsaTrackerPage } from './pages/DsaTrackerPage';
 import { ChatMentorPage } from './pages/ChatMentorPage';
 import { CodingProfilesPage } from './pages/CodingProfilesPage';
@@ -124,6 +125,7 @@ export default function App() {
             <Route path="/roadmap" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} />
             <Route path="/chat-mentor" element={<ProtectedRoute><ChatMentorPage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/activity" element={<ProtectedRoute><EngineeringActivityPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/shared/chat/:token" element={<SharedChatPage />} />
             <Route path="/gmail/callback" element={<GmailCallbackHandler />} />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from './Card';
 
 export function MetricCard({
@@ -8,7 +9,8 @@ export function MetricCard({
   icon: Icon,
   trend,
   className = '',
-  accent = 'green' // 'green' | 'blue' | 'orange' | 'purple' | 'neutral'
+  accent = 'green', // 'green' | 'blue' | 'orange' | 'purple' | 'neutral'
+  to
 }) {
   const accentStyles = {
     green: 'text-[#315B45] bg-[#E8F0EA] border-[#D1E0D7]',
@@ -18,8 +20,8 @@ export function MetricCard({
     neutral: 'text-[#5F625C] bg-[#F7F4ED] border-[#E3DED3]'
   };
 
-  return (
-    <Card className={`space-y-2.5 p-4 ${className}`}>
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#74766F]">
           {title}
@@ -47,6 +49,26 @@ export function MetricCard({
           {trend}
         </div>
       )}
+    </>
+  );
+
+  const interactiveClasses = to 
+    ? "block outline-none hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus-visible:ring-2 focus-visible:ring-[#315B45] focus-visible:ring-offset-2 transition-all duration-200" 
+    : "";
+
+  if (to) {
+    return (
+      <Link to={to} className={interactiveClasses}>
+        <Card className={`space-y-2.5 p-4 h-full ${className} ${to ? 'border-[#E5E0D6] hover:border-[#D1E0D7]' : ''}`}>
+          {content}
+        </Card>
+      </Link>
+    );
+  }
+
+  return (
+    <Card className={`space-y-2.5 p-4 h-full ${className}`}>
+      {content}
     </Card>
   );
 }

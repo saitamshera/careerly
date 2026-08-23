@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Logo } from './ui/Logo';
 
 const prepareLinks = [
   { label: 'Overview', to: '/dashboard' },
@@ -29,13 +30,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
           {/* Brand Section */}
           <div className="col-span-2 space-y-1">
-            <Link to="/dashboard" className="inline-flex items-center gap-1.5">
-              <div className="flex h-4.5 w-4.5 items-center justify-center rounded bg-[#315B45] text-white font-bold text-[9px]">
-                C
-              </div>
-              <span className="text-xs font-bold text-[#20211E] tracking-tight">
-                Careerly
-              </span>
+            <Link to="/dashboard" className="inline-flex items-center">
+              <Logo />
             </Link>
             <p className="text-[0.7rem] text-[#6F7068] max-w-xs leading-relaxed">
               Your focused workspace for software engineering placement preparation.

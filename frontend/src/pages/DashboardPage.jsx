@@ -3,22 +3,101 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Target,
   ArrowRight,
-  AlertTriangle,
   Code2,
   CheckCircle2,
   TrendingUp,
-  Sparkles,
-  ShieldCheck,
-  XCircle
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { api } from '../services/api';
-import { Card, CardHeader } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { DashboardActivityPreview } from '../components/activity/DashboardActivityPreview';
+
+function PriorityCard({ item }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <Card className={`flex flex-col justify-between p-5 space-y-4 transition ${item.completed ? 'border-[#E8F0EA] bg-[#F5F2EA] opacity-60' : 'border-[#E5E0D6] bg-[#FFFDF8] hover:border-[#315B45]'}`}>
+      <div 
+        className="space-y-3 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#315B45] focus-visible:ring-offset-2 rounded-md" 
+        onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={isExpanded}
+      >
+        <div className="flex items-center justify-between pointer-events-none">
+          <span className="text-xl font-black text-[#E5E0D6]">0{item.rank}</span>
+          <div className="flex items-center gap-2">
+            <Badge variant="neutral" size="sm">{item.category}</Badge>
+            <div className="text-[#92928A] flex items-center justify-center p-1 rounded-md hover:bg-[#F0ECE4] transition">
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+          </div>
+        </div>
+        <div className="pointer-events-none">
+          <h3 className="text-sm font-bold text-[#20211E]">{item.title}</h3>
+          
+          {!isExpanded && (
+            <p className="text-xs text-[#6F7068] mt-1.5 leading-relaxed line-clamp-2">{item.whyReason}</p>
+          )}
+
+          {isExpanded && (
+            <div className="mt-3 p-3 bg-[#F8F6F0] rounded-lg border border-[#E5E0D6] space-y-2">
+              <div className="grid grid-cols-2 gap-2 text-[0.7rem]">
+                {item.currentScore !== null && (
+                  <div><span className="font-semibold text-[#6F7068]">Current:</span> <span className="text-[#20211E] font-bold">{item.currentScore}%</span></div>
+                )}
+                {item.targetScore !== null && (
+                  <div><span className="font-semibold text-[#6F7068]">Target:</span> <span className="text-[#20211E] font-bold">{item.targetScore}%</span></div>
+                )}
+                {item.gapPoints != null && (
+                  <div><span className="font-semibold text-[#6F7068]">Gap:</span> <span className="text-[#C9683A] font-bold">{item.gapPoints}</span></div>
+                )}
+                <div><span className="font-semibold text-[#6F7068]">Impact:</span> <span className="text-[#315B45] font-bold">{item.priorityScore > 80 ? 'High' : 'Medium'}</span></div>
+              </div>
+              
+              <div className="pt-2 border-t border-[#E5E0D6]">
+                <span className="block text-[0.65rem] font-bold uppercase tracking-wider text-[#92928A] mb-1">Why this is your priority</span>
+                <p className="text-xs text-[#20211E] leading-relaxed">{item.whyReason}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="pt-4 border-t border-[#F0ECE4] flex items-center justify-between">
+        <span className="text-xs font-semibold text-[#6F7068]">
+          {item.estimatedDuration || '25 min'}
+        </span>
+        {item.completed ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#315B45]">
+            <CheckCircle2 className="h-4 w-4" /> Completed
+          </span>
+        ) : (
+          <Link
+            to={item.actionRoute}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FFFDF8] bg-[#315B45] hover:bg-[#20211E] px-3 py-1.5 rounded-md transition shadow-2xs outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#20211E]"
+          >
+            <span>Start</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
+    </Card>
+  );
+}
 
 export function DashboardPage() {
   const user = useSelector((state) => state.auth.user);
@@ -28,7 +107,6 @@ export function DashboardPage() {
   const [targetCompany, setTargetCompany] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [selectedGapTab, setSelectedGapTab] = useState('all');
 
   // 1. Fetch Unified Readiness Intelligence
   const { data: readinessData } = useQuery({
@@ -57,8 +135,6 @@ export function DashboardPage() {
     role: user?.targetRole || 'Software Development Engineer'
   };
 
-  const jobMatch = readinessData?.jobMatch;
-  const placementReadiness = readinessData?.placementReadiness;
   const breakdown = readinessData?.readinessBreakdown || {};
   const bottleneck = readinessData?.biggestBottleneck;
   const priorities = readinessData?.topPriorities || [];
@@ -80,434 +156,162 @@ export function DashboardPage() {
   };
 
   return (
-    <main className="flex-1 p-6 lg:p-10 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
-      {/* 1. Target Job Header with Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-xl bg-[#FFFDF8] border border-[#E5E0D6] shadow-2xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#315B45]">
-              Target Goal
-            </span>
-            {target.hasCustomJobDescription && (
-              <Badge variant="blue" size="sm">
-                Custom JD Parsed
-              </Badge>
-            )}
-          </div>
-          <h1 className="text-lg sm:text-xl font-bold text-[#20211E] tracking-tight flex items-center gap-2">
-            <span>{target.company}</span>
-            <span className="text-[#92928A] font-light">•</span>
-            <span className="text-[#315B45] font-bold">{target.role}</span>
+    <main className="flex-1 p-6 lg:p-10 space-y-10 max-w-5xl mx-auto w-full animate-fadeIn bg-[#F8F6F0]">
+      {/* 1. Greeting & Target Role */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#20211E] tracking-tight">
+            Good morning, {user?.name?.split(' ')[0] || 'Candidate'} 👋
           </h1>
-          <p className="text-xs text-[#6F7068]">
-            Readiness evaluated against verified problem solving, resume, mock interview, and project data.
-          </p>
+          <p className="text-sm text-[#6F7068] mt-1">Let's make today count.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={openTargetModal}>
-            Change Target / Paste JD
+        <div className="flex flex-col items-start md:items-end gap-1.5">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#92928A]">Target Role</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-[#20211E]">{target.role}</span>
+            <span className="text-[#92928A] font-light">•</span>
+            <span className="text-sm font-medium text-[#315B45]">{target.company}</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={openTargetModal} className="mt-1 h-7 text-xs px-2.5">
+            Change Target
           </Button>
         </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Placement Readiness"
-          value={placementReadiness?.score !== null ? `${placementReadiness?.score}%` : 'Evaluating'}
-          subtitle={placementReadiness?.level || 'Developing'}
-          icon={Target}
-          accent="green"
-        />
-
-        <MetricCard
-          title="Job Match Score"
-          value={jobMatch?.score !== null ? `${jobMatch?.score}%` : 'N/A'}
-          subtitle={jobMatch?.details || 'Matching skills with JD'}
-          icon={CheckCircle2}
-          accent="blue"
-        />
-
-        <MetricCard
-          title="DSA Solved Depth"
-          value={`${readinessData?.activity?.dsaSolvedTotal || 0}`}
-          subtitle="LeetCode & DSA Tracker"
-          icon={Code2}
-          accent="purple"
-        />
-
-        <MetricCard
-          title="Closed-Loop Progress"
-          value={`${closedLoop?.eventsCount || 0} Events`}
-          subtitle="Recent verified actions"
-          icon={TrendingUp}
-          accent="orange"
-        />
-      </div>
-
-      {/* 3. Primary Bottleneck Alert */}
-      {bottleneck && (
-        <Card className="border-[#F0D0BF] bg-[#F7E7DD]/50 p-4 space-y-2.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F7E7DD] border border-[#F0D0BF] text-[#C9683A]">
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#C9683A]">
-                    Primary Bottleneck
-                  </span>
-                  <Badge variant="orange" size="sm">
-                    {bottleneck.gapPoints} pt gap
-                  </Badge>
-                </div>
-                <h3 className="text-sm font-bold text-[#20211E]">
-                  {bottleneck.title} ({bottleneck.currentScore !== null ? `${bottleneck.currentScore}%` : 'Unmeasured'} vs {bottleneck.targetScore}%)
-                </h3>
-                <p className="text-xs text-[#6F7068] leading-relaxed max-w-xl">
-                  {bottleneck.reason}
-                </p>
-              </div>
-            </div>
-
-            <div className="shrink-0">
-              <Link to={bottleneck.actionRoute}>
-                <Button size="sm" variant="danger">
-                  <span>{bottleneck.actionLabel}</span>
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* 4. Top 3 Deterministic Priorities */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between pb-1.5 border-b border-[#E5E0D6]">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#315B45]" />
-            <h2 className="text-sm font-bold text-[#20211E] tracking-tight">
-              Top Ranked Actions for Today
-            </h2>
-          </div>
-          <span className="text-[0.68rem] text-[#92928A]">
-            Gap × Relevance × Impact
-          </span>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
+      {/* 2. Today's Priorities */}
+      <section className="space-y-4">
+        <h2 className="text-[0.7rem] font-bold tracking-widest uppercase text-[#92928A]">Today's Priorities</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
           {priorities.map((item) => (
-            <Card
-              key={item.rank}
-              className="flex flex-col justify-between space-y-3 hover:border-[#315B45] transition p-4"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[0.68rem] font-mono font-bold text-[#315B45]">
-                    0{item.rank}
-                  </span>
-                  <Badge variant={item.rank === 1 ? 'orange' : 'neutral'} size="sm">
-                    {item.category}
-                  </Badge>
-                </div>
-                <h3 className="text-xs font-bold text-[#20211E] leading-snug">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-[#6F7068] leading-relaxed">
-                  {item.whyReason}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-[#F0ECE4] flex items-center justify-between">
-                <span className="text-[0.68rem] text-[#92928A] font-medium">
-                  {item.suggestedFocus || 'Core Focus'}
-                </span>
-                <Link
-                  to={item.actionRoute}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#315B45] hover:underline transition"
-                >
-                  <span>{item.actionLabel}</span>
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            </Card>
+            <PriorityCard key={item.rank} item={item} />
           ))}
+          {priorities.length === 0 && (
+            <div className="col-span-3 p-6 text-center text-sm text-[#6F7068] border border-dashed border-[#E5E0D6] rounded-xl">
+              You're all caught up! Take a break or explore the roadmap.
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 5. Target Job vs Candidate Gap Engine Matrix */}
-      <Card className="space-y-4 p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#F0ECE4]">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-[#315B45]" />
-              <h2 className="text-sm font-bold text-[#20211E] tracking-tight">
-                Skill Verification Matrix
-              </h2>
-            </div>
-            <p className="text-xs text-[#6F7068] mt-0.5">
-              Requirements for <span className="font-semibold text-[#20211E]">{target.role}</span> cross-referenced with your data.
-            </p>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-[#F5F2EA] p-1 rounded-lg text-xs font-medium border border-[#E5E0D6]">
-            <button
-              onClick={() => setSelectedGapTab('all')}
-              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer ${selectedGapTab === 'all'
-                ? 'bg-[#FFFDF8] text-[#20211E] font-bold shadow-2xs'
-                : 'text-[#6F7068] hover:text-[#20211E]'
-                }`}
-            >
-              All ({(jobMatch?.verifiedSkills?.length || 0) + (jobMatch?.unverifiedSkills?.length || 0) + (jobMatch?.missingSkills?.length || 0)})
-            </button>
-            <button
-              onClick={() => setSelectedGapTab('verified')}
-              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer flex items-center gap-1 ${selectedGapTab === 'verified'
-                ? 'bg-[#E8F0EA] text-[#315B45] font-bold'
-                : 'text-[#315B45] hover:bg-[#E8F0EA]/60'
-                }`}
-            >
-              <CheckCircle2 className="h-3 w-3" />
-              <span>Verified ({jobMatch?.verifiedSkills?.length || 0})</span>
-            </button>
-            <button
-              onClick={() => setSelectedGapTab('unverified')}
-              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer flex items-center gap-1 ${selectedGapTab === 'unverified'
-                ? 'bg-[#F7E7DD] text-[#C9683A] font-bold'
-                : 'text-[#C9683A] hover:bg-[#F7E7DD]/60'
-                }`}
-            >
-              <AlertTriangle className="h-3 w-3" />
-              <span>Unverified ({jobMatch?.unverifiedSkills?.length || 0})</span>
-            </button>
-            <button
-              onClick={() => setSelectedGapTab('missing')}
-              className={`px-2.5 py-0.5 rounded-md transition cursor-pointer flex items-center gap-1 ${selectedGapTab === 'missing'
-                ? 'bg-[#FDECEB] text-[#B83A35] font-bold'
-                : 'text-[#B83A35] hover:bg-[#FDECEB]/60'
-                }`}
-            >
-              <XCircle className="h-3 w-3" />
-              <span>Missing ({jobMatch?.missingSkills?.length || 0})</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Skill Matrix Grid */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {/* 1. Verified Skills */}
-          {(selectedGapTab === 'all' || selectedGapTab === 'verified') &&
-            jobMatch?.verifiedSkills?.map((skill, idx) => (
-              <div
-                key={`ver-${idx}`}
-                className="p-3 rounded-lg border border-[#D1E0D7] bg-[#E8F0EA]/40 flex flex-col justify-between space-y-2.5"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#315B45] capitalize flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                      {skill.name}
-                    </span>
-                    <Badge variant="green" size="sm">Verified</Badge>
-                  </div>
-                  <ul className="space-y-0.5 text-[0.7rem] text-[#315B45]">
-                    {skill.evidence?.map((ev, eIdx) => (
-                      <li key={eIdx} className="flex items-start gap-1">
-                        <span>•</span>
-                        <span>{ev}</span>
-                      </li>
-                    ))}
-                  </ul>
+      {/* 3. Biggest Gap */}
+      {bottleneck && (
+        <section className="space-y-4">
+          <h2 className="text-[0.7rem] font-bold tracking-widest uppercase text-[#92928A]">Your Biggest Gap</h2>
+          <Card className="p-6 border-[#E5E0D6] bg-[#FFFDF8]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-[#20211E]">{bottleneck.category}</h3>
+                  <span className="text-sm font-semibold text-[#6F7068]">
+                    {bottleneck.currentScore || 0}% current <span className="mx-2 text-[#E5E0D6]">|</span> {bottleneck.targetScore}% target
+                  </span>
                 </div>
-                <div className="pt-2 border-t border-[#D1E0D7]/60 flex justify-end">
-                  <Link
-                    to={skill.actionRoute || '/coding-profiles'}
-                    className="text-[0.68rem] font-bold text-[#315B45] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>{skill.actionLabel || 'View Proof'}</span>
-                    <ArrowRight className="h-3 w-3" />
+
+                {/* Progress Bar */}
+                <div className="relative w-full h-2.5 bg-[#E8F0EA] rounded-full overflow-hidden">
+                  <div
+                    className="absolute top-0 left-0 h-full bg-[#315B45] rounded-full"
+                    style={{ width: `${Math.min(100, bottleneck.currentScore || 0)}%` }}
+                  />
+                  <div
+                    className="absolute top-0 h-full bg-[#C9683A] opacity-80"
+                    style={{
+                      left: `${bottleneck.currentScore || 0}%`,
+                      width: `${bottleneck.targetScore - (bottleneck.currentScore || 0)}%`
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                  <div>
+                    <div className="text-sm font-bold text-[#C9683A]">Gap: {bottleneck.gapPoints} points</div>
+                    <p className="text-xs text-[#6F7068] mt-0.5">{bottleneck.reason}</p>
+                  </div>
+                  <Link to={bottleneck.actionRoute} className="shrink-0 text-xs font-bold text-[#315B45] hover:underline inline-flex items-center gap-1">
+                    <span>Focus Area</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>
-            ))}
+            </div>
+          </Card>
+        </section>
+      )}
 
-          {/* 2. Unverified Claims */}
-          {(selectedGapTab === 'all' || selectedGapTab === 'unverified') &&
-            jobMatch?.unverifiedSkills?.map((skill, idx) => (
-              <div
-                key={`unver-${idx}`}
-                className="p-3 rounded-lg border border-[#F0D0BF] bg-[#F7E7DD]/40 flex flex-col justify-between space-y-2.5"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#C9683A] capitalize flex items-center gap-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                      {skill.name}
-                    </span>
-                    <Badge variant="orange" size="sm">Unverified</Badge>
-                  </div>
-                  <p className="text-[0.7rem] text-[#6F7068] leading-snug">
-                    {skill.reason || 'Claimed on resume but not yet verified in practice.'}
-                  </p>
+      {/* 4. Preparation Summary */}
+      <section className="space-y-4">
+        <h2 className="text-[0.7rem] font-bold tracking-widest uppercase text-[#92928A]">Preparation Summary</h2>
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+          <MetricCard
+            title="DSA Progress"
+            value={`${breakdown.dsaCompetency?.score || 0}%`}
+            subtitle={`${readinessData?.activity?.dsaSolvedTotal || 0} Solved`}
+            icon={Code2}
+            accent="green"
+            to="/dsa-tracker"
+          />
+          <MetricCard
+            title="Interview Readiness"
+            value={`${breakdown.interviewPerformance?.score || 0}%`}
+            subtitle={`${breakdown.interviewPerformance?.completedCount || 0} Mocks done`}
+            icon={Target}
+            accent="blue"
+            to="/interview-prep"
+          />
+          <MetricCard
+            title="Resume Score"
+            value={`${breakdown.resumeAlignment?.score || 0}/100`}
+            subtitle="ATS parsed"
+            icon={CheckCircle2}
+            accent="orange"
+            to="/resume"
+          />
+          <MetricCard
+            title="GitHub Connected"
+            value={breakdown.engineeringProjects?.score ? 'Yes' : 'No'}
+            subtitle={breakdown.engineeringProjects?.score ? `${breakdown.engineeringProjects.score}% proof` : 'Connect now'}
+            icon={Code2}
+            accent="purple"
+            to="/coding-profiles/github"
+          />
+          <MetricCard
+            title="Applications Tracked"
+            value={`${readinessData?.activity?.activeApplications || 0}`}
+            subtitle={`${readinessData?.activity?.upcomingOAs || 0} upcoming OAs`}
+            icon={TrendingUp}
+            accent="green"
+            to="/job-tracker"
+          />
+        </div>
+      </section>
+
+      {/* 5. Recent Progress */}
+      {closedLoop && closedLoop.recentEvents?.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-[0.7rem] font-bold tracking-widest uppercase text-[#92928A]">Recent Progress</h2>
+          <Card className="divide-y divide-[#F0ECE4] border-[#E5E0D6] bg-[#FFFDF8]">
+            {closedLoop.recentEvents.slice(0, 3).map((evt, idx) => (
+              <div key={idx} className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-[#20211E]">{evt.description}</p>
+                  <p className="text-xs text-[#6F7068] mt-0.5">{evt.timeLabel}</p>
                 </div>
-                <div className="pt-2 border-t border-[#F0D0BF]/60 flex justify-end">
-                  <Link
-                    to={skill.actionRoute || '/interview-prep'}
-                    className="text-[0.68rem] font-bold text-[#C9683A] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>{skill.actionLabel || 'Verify in Interview'}</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
+                <Badge variant="neutral" size="sm">+{evt.impactScore} pts</Badge>
               </div>
             ))}
-
-          {/* 3. Missing Requirements */}
-          {(selectedGapTab === 'all' || selectedGapTab === 'missing') &&
-            jobMatch?.missingSkills?.map((skill, idx) => (
-              <div
-                key={`mis-${idx}`}
-                className="p-3 rounded-lg border border-[#F7CBC9] bg-[#FDECEB]/40 flex flex-col justify-between space-y-2.5"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#B83A35] capitalize flex items-center gap-1.5">
-                      <XCircle className="h-3.5 w-3.5 shrink-0" />
-                      {skill.name}
-                    </span>
-                    <Badge variant="red" size="sm">Missing</Badge>
-                  </div>
-                  <p className="text-[0.7rem] text-[#6F7068] leading-snug">
-                    {skill.reason || 'Requirement not detected in resume or profile.'}
-                  </p>
-                </div>
-                <div className="pt-2 border-t border-[#F7CBC9]/60 flex justify-end">
-                  <Link
-                    to={skill.actionRoute || '/roadmap'}
-                    className="text-[0.68rem] font-bold text-[#B83A35] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>{skill.actionLabel || 'Add to Roadmap'}</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
+            {closedLoop.recentEvents.length === 0 && (
+              <div className="p-6 text-center text-sm text-[#6F7068]">
+                Start a priority to see your progress here.
               </div>
-            ))}
+            )}
+          </Card>
         </div>
-      </Card>
+      )}
 
-      {/* 6. Evidence-First Readiness Breakdown */}
-      <Card className="space-y-4 p-5">
-        <CardHeader
-          title="Evidence-First Readiness Breakdown"
-          subtitle="Transparent breakdown of measured skills. 100% verified data."
-        />
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {/* DSA */}
-          <div className="p-3.5 rounded-lg border border-[#E5E0D6] bg-[#F8F6F0] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#20211E]">DSA Depth</span>
-              {breakdown.dsaCompetency?.status === 'measured' ? (
-                <Badge variant="green" size="sm">{breakdown.dsaCompetency.score}%</Badge>
-              ) : (
-                <Badge variant="neutral" size="sm">Not Measured</Badge>
-              )}
-            </div>
-            <ul className="space-y-0.5 text-xs text-[#6F7068]">
-              {breakdown.dsaCompetency?.evidence?.map((ev, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-[#315B45]">•</span>
-                  <span>{ev}</span>
-                </li>
-              )) || <li>Log problems to establish measurement.</li>}
-            </ul>
-          </div>
-
-          {/* Resume ATS */}
-          <div className="p-3.5 rounded-lg border border-[#E5E0D6] bg-[#F8F6F0] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#20211E]">Resume ATS</span>
-              {breakdown.resumeAlignment?.status === 'measured' ? (
-                <Badge variant="green" size="sm">{breakdown.resumeAlignment.score}/100</Badge>
-              ) : (
-                <Badge variant="neutral" size="sm">Not Measured</Badge>
-              )}
-            </div>
-            <ul className="space-y-0.5 text-xs text-[#6F7068]">
-              {breakdown.resumeAlignment?.evidence?.map((ev, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-[#315B45]">•</span>
-                  <span>{ev}</span>
-                </li>
-              )) || <li>Upload resume PDF to measure ATS score.</li>}
-            </ul>
-          </div>
-
-          {/* Interview */}
-          <div className="p-3.5 rounded-lg border border-[#E5E0D6] bg-[#F8F6F0] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#20211E]">Mock Interview</span>
-              {breakdown.interviewPerformance?.status === 'measured' ? (
-                <Badge variant="green" size="sm">{breakdown.interviewPerformance.score}%</Badge>
-              ) : (
-                <Badge variant="neutral" size="sm">Not Measured</Badge>
-              )}
-            </div>
-            <ul className="space-y-0.5 text-xs text-[#6F7068]">
-              {breakdown.interviewPerformance?.evidence?.map((ev, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-[#315B45]">•</span>
-                  <span>{ev}</span>
-                </li>
-              )) || <li>Take a mock interview to establish score.</li>}
-            </ul>
-          </div>
-
-          {/* Communication */}
-          <div className="p-3.5 rounded-lg border border-[#E5E0D6] bg-[#F8F6F0] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#20211E]">STAR Delivery</span>
-              {breakdown.communication?.status === 'measured' ? (
-                <Badge variant="green" size="sm">{breakdown.communication.score}%</Badge>
-              ) : (
-                <Badge variant="neutral" size="sm">Not Measured</Badge>
-              )}
-            </div>
-            <ul className="space-y-0.5 text-xs text-[#6F7068]">
-              {breakdown.communication?.evidence?.map((ev, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-[#315B45]">•</span>
-                  <span>{ev}</span>
-                </li>
-              )) || <li>Complete mock verbal answers to measure delivery.</li>}
-            </ul>
-          </div>
-
-          {/* Projects & GitHub */}
-          <div className="p-3.5 rounded-lg border border-[#E5E0D6] bg-[#F8F6F0] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#20211E]">Engineering Proof</span>
-              {breakdown.engineeringProjects?.status === 'measured' ? (
-                <Badge variant="green" size="sm">{breakdown.engineeringProjects.score}%</Badge>
-              ) : (
-                <Badge variant="neutral" size="sm">Connect GitHub</Badge>
-              )}
-            </div>
-            <ul className="space-y-0.5 text-xs text-[#6F7068]">
-              {breakdown.engineeringProjects?.evidence?.map((ev, i) => (
-                <li key={i} className="flex items-start gap-1">
-                  <span className="text-[#315B45]">•</span>
-                  <span>{ev}</span>
-                </li>
-              )) || <li>Connect GitHub profile in Coding Profiles.</li>}
-            </ul>
-          </div>
-        </div>
-      </Card>
+      <div className="space-y-4 lg:col-span-2">
+        <DashboardActivityPreview />
+      </div>
 
       {/* Target Modal */}
       <Modal

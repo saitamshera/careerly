@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { clearSession } from '../app/store';
 import { queryClient } from '../app/queryClient';
+import { Logo } from './ui/Logo';
 
 const navSections = [
   {
@@ -63,13 +64,8 @@ export function Sidebar() {
     <>
       {/* Mobile Header */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[#E3DED3] bg-[#F4F1E9] px-4 py-3 shadow-xs lg:hidden">
-        <NavLink to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#315B45] text-white font-bold text-xs">
-            C
-          </div>
-          <span className="text-base font-bold text-[#20211E] tracking-tight">
-            Careerly
-          </span>
+        <NavLink to="/dashboard" className="flex items-center">
+          <Logo />
         </NavLink>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -119,15 +115,8 @@ export function Sidebar() {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-[#E3DED3] bg-[#F4F1E9] p-4 shadow-xs lg:flex">
         {/* Brand Header */}
         <div className="flex items-center justify-between px-1">
-          <NavLink to="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#315B45] text-white font-bold text-xs">
-              C
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-bold text-[#20211E] tracking-tight">
-                Careerly
-              </span>
-            </div>
+          <NavLink to="/dashboard" className="flex items-center">
+            <Logo />
           </NavLink>
         </div>
 

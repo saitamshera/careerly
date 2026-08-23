@@ -4,6 +4,7 @@ import { ArrowRight, Lock, Mail, User, KeyRound, CheckCircle2, RotateCw, AlertCi
 import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Logo } from '../components/ui/Logo';
 import { forgotPassword, verifyResetOtp, resetPassword } from '../services/auth.api';
 
 export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loading = false }) {
@@ -203,16 +204,8 @@ export function AuthPage({ title, mode = 'login', onSubmit, onGoogleAuth, loadin
       <Card className="w-full max-w-md p-6 sm:p-8 space-y-5 border border-[#E3DED3] bg-[#FFFDF8]">
         {/* Header & Logo */}
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#315B45] text-[#FFFDF8] font-black text-xs">
-              C
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold tracking-tight text-[#20211E]">
-                Careerly
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#315B45] mb-0.5" />
-            </div>
+          <Link to="/" className="inline-flex items-center justify-center">
+            <Logo />
           </Link>
 
           <h1 className="text-lg sm:text-xl font-bold text-[#20211E] mt-3">

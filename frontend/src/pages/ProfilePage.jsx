@@ -11,6 +11,7 @@ import { Card, CardHeader } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { ActivityOverview } from '../components/activity/ActivityOverview';
 
 const SUGGESTED_SKILLS = [
   'React', 'Node.js', 'Express', 'MongoDB', 'Python', 'Java', 'C++',
@@ -126,18 +127,19 @@ export function ProfilePage() {
       </Card>
 
       {/* 3. Placement Preferences & Goals */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="space-y-3.5 p-4">
-          <CardHeader
-            title="Daily Practice Target"
-            subtitle="Configure daily problem solving milestones."
-          />
-
-          <div className="space-y-3 text-xs">
-            <div>
-              <label className="block font-bold text-[#20211E] mb-1">
-                Daily DSA Target (Problems / Day)
-              </label>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="md:col-span-2 lg:col-span-2 space-y-6">
+          <ActivityOverview />
+          <Card className="space-y-3.5 p-4">
+            <CardHeader
+              title="Daily Practice Target"
+              subtitle="Configure daily problem solving milestones."
+            />
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#20211E] mb-1">
+                  Daily DSA Target (Problems / Day)
+                </label>
               <input
                 type="number"
                 min="1"
@@ -168,6 +170,7 @@ export function ProfilePage() {
             </div>
           </div>
         </Card>
+        </div>
 
         {/* Linked Accounts */}
         <Card className="space-y-3.5 p-4">

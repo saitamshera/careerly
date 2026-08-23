@@ -11,8 +11,17 @@
  * - confidence: 1.0 if measured, 0.7 if low sample size, 0.0 if unmeasured
  */
 
-function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRequirements, pipelineStats }) {
+function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRequirements, pipelineStats, telemetry }) {
   const candidates = [];
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const wasCompletedToday = (dateField) => {
+    if (!dateField) return false;
+    const date = new Date(dateField);
+    return date >= todayStart;
+  };
 
   // 1. Evaluate DSA Dimension
   const dsa = readinessDimensions.dsaCompetency;
@@ -38,7 +47,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         actionLabel: `Practice ${weakTopic}`,
         actionRoute: `/practice/${topicSlug}`,
         actionIntent: { type: 'SOLVE_DSA', topic: weakTopic },
-        suggestedFocus: weakTopic
+        suggestedFocus: weakTopic,
+        estimatedDuration: '35 min',
+        completed: (telemetry?.dsaProblems || []).some(p => wasCompletedToday(p.createdAt))
       });
     }
   } else {
@@ -55,7 +66,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
       actionLabel: 'Log DSA Problem',
       actionRoute: '/dsa-tracker',
       actionIntent: { type: 'SOLVE_DSA', topic: 'Arrays' },
-      suggestedFocus: 'Arrays & Two Pointers'
+      suggestedFocus: 'Arrays & Two Pointers',
+      estimatedDuration: '10 min',
+      completed: (telemetry?.dsaProblems || []).some(p => wasCompletedToday(p.createdAt))
     });
   }
 
@@ -85,7 +98,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         actionLabel: 'Optimize Resume in Lab',
         actionRoute: '/resume',
         actionIntent: { type: 'IMPROVE_RESUME', section: 'Skills' },
-        suggestedFocus: missingList || 'Quantified business impacts'
+        suggestedFocus: missingList || 'Quantified business impacts',
+        estimatedDuration: '15 min',
+        completed: wasCompletedToday(telemetry?.latestResumeReport?.createdAt)
       });
     }
   } else {
@@ -101,7 +116,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
       actionLabel: 'Upload Resume',
       actionRoute: '/resume',
       actionIntent: { type: 'IMPROVE_RESUME', section: 'Upload' },
-      suggestedFocus: 'Core technical keywords'
+      suggestedFocus: 'Core technical keywords',
+      estimatedDuration: '5 min',
+      completed: wasCompletedToday(telemetry?.latestResumeReport?.createdAt)
     });
   }
 
@@ -128,7 +145,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         actionLabel: 'Start AI Mock Interview',
         actionRoute: `/interview-prep?topic=${encodeURIComponent(topicFocus)}&type=technical`,
         actionIntent: { type: 'PRACTICE_INTERVIEW', topic: topicFocus },
-        suggestedFocus: 'System architecture & trade-offs'
+        suggestedFocus: 'System architecture & trade-offs',
+        estimatedDuration: '45 min',
+        completed: (telemetry?.interviews || []).some(i => wasCompletedToday(i.createdAt) && i.status === 'completed')
       });
     }
   } else {
@@ -145,7 +164,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
       actionLabel: 'Start AI Mock Interview',
       actionRoute: `/interview-prep?topic=${encodeURIComponent(topicFocus)}&type=technical`,
       actionIntent: { type: 'PRACTICE_INTERVIEW', topic: topicFocus },
-      suggestedFocus: 'Background & core projects'
+      suggestedFocus: 'Background & core projects',
+      estimatedDuration: '45 min',
+      completed: (telemetry?.interviews || []).some(i => wasCompletedToday(i.createdAt) && i.status === 'completed')
     });
   }
 
@@ -166,7 +187,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         actionLabel: 'Practice Behavioral Mock',
         actionRoute: '/interview-prep?type=behavioral',
         actionIntent: { type: 'PRACTICE_INTERVIEW', topic: 'Behavioral STAR' },
-        suggestedFocus: 'STAR framework & conciseness'
+        suggestedFocus: 'STAR framework & conciseness',
+        estimatedDuration: '20 min',
+        completed: (telemetry?.interviews || []).some(i => wasCompletedToday(i.createdAt) && i.status === 'completed')
       });
     }
   }
@@ -188,7 +211,9 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
         actionLabel: 'Inspect GitHub Repos',
         actionRoute: '/coding-profiles/github',
         actionIntent: { type: 'BUILD_PROJECT', topic: 'GitHub Proof' },
-        suggestedFocus: 'Live demo link & architectural diagrams'
+        suggestedFocus: 'Live demo link & architectural diagrams',
+        estimatedDuration: '15 min',
+        completed: (telemetry?.codingProfiles || []).some(p => p.platform === 'github' && wasCompletedToday(p.updatedAt))
       });
     }
   }
@@ -208,15 +233,15 @@ function calculateDeterministicPriorities({ readinessDimensions, jobMatch, jobRe
 
   const biggestBottleneck = primary
     ? {
-        category: primary.category,
-        title: primary.title,
-        currentScore: primary.currentScore,
-        targetScore: primary.targetScore,
-        gapPoints: primary.gapPoints,
-        reason: primary.whyReason,
-        actionLabel: primary.actionLabel,
-        actionRoute: primary.actionRoute
-      }
+      category: primary.category,
+      title: primary.title,
+      currentScore: primary.currentScore,
+      targetScore: primary.targetScore,
+      gapPoints: primary.gapPoints,
+      reason: primary.whyReason,
+      actionLabel: primary.actionLabel,
+      actionRoute: primary.actionRoute
+    }
     : null;
 
   return {
